@@ -37,8 +37,18 @@ func Init() {
 
 	// ユーザー
 	users := r.Group("/users")
-	users.GET("", controllers.GetUser)
-	users.POST("", controllers.CreateUser)
+	// 全部取得
+	users.GET("/", controllers.GetUsers)
+
+	// サイト
+
+	// 作品
+	// productions := r.Group("/productions")
+	// 全部取得
+	// productions.GET("/", controllers.GetProductions)
+	// 特定の作品取得
+	// productions.GET("/:id", controllers.GetProduction)
+
 
 
 	// 指定されたポートでサーバーを開始

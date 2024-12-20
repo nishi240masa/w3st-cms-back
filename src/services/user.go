@@ -32,7 +32,8 @@ func CreateUser(input dto.CreateUserData) (*models.User, error) {
     // 新しいユーザーを作成
     newUser := &models.User{
         Name:    input.Name,
-        IconURL: input.IconURL,
+        Email:   input.Email,
+        Password: input.Password,
     }
 
 	err = repositorys.CreateUser(newUser)
