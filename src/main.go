@@ -1,8 +1,6 @@
 package main
 
-import (
-	"md2s/router"
-)
+import "w3st/router"
 
 func main() {
 	router.Init()

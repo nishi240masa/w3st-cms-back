@@ -1,62 +1,81 @@
 package controllers
 
 import (
-	"errors"
-	"md2s/dto"
-	"md2s/services"
 	"net/http"
-	"strings"
+	"w3st/dto"
+	"w3st/services"
 
 	"github.com/gin-gonic/gin"
 )
 
-func extractJWTFromHeader(c *gin.Context) (string, error) {
-	authHeader := c.GetHeader("Authorization")
-	if authHeader == "" {
-		return "", errors.New("missing Authorization header")
-	}
+// func extractJWTFromHeader(c *gin.Context) (string, error) {
+// 	authHeader := c.GetHeader("Authorization")
+// 	if authHeader == "" {
+// 		return "", errors.New("missing Authorization header")
+// 	}
 
-	parts := strings.Split(authHeader, " ")
-	if len(parts) != 2 || parts[0] != "Bearer" {
-		return "", errors.New("invalid Authorization header format")
-	}
+// 	parts := strings.Split(authHeader, " ")
+// 	if len(parts) != 2 || parts[0] != "Bearer" {
+// 		return "", errors.New("invalid Authorization header format")
+// 	}
 
-	return parts[1], nil
-}
+// 	return parts[1], nil
+// }
 
-func GetUsers(c *gin.Context) {
+// func GetUsers(c *gin.Context) {
 
-	users, err := services.GetUsers()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 	users, err := services.GetUsers()
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, users)
+// }
+
+// func GetUser(c *gin.Context) {
+
+// 	userId := c.Param("id")
+
+// 	user, err := services.GetUser(userId)
+// 	if err != nil {
+// 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, user)
+// }
+
+func Signup(c *gin.Context) {
+	var input dto.SignupData
+
+	// リクエストのバインド
+	if  err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, users)
-}
-
-func GetUser(c *gin.Context) {
-
-	userId := c.Param("id")
-
-	user, err := services.GetUser(userId)
+	// ユーザー登録
+	user, err := services.Signup(input)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, user)
 }
 
-func CreateUser(c *gin.Context) {
+func Login(c *gin.Context) {
+	var input dto.LoginData
 
-	var input dto.CreateUserData
+	// リクエストのバインド
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	user, err := services.CreateUser(input)
+	// ログイン
+	user, err := services.Login(input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -64,3 +83,20 @@ func CreateUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+// func CreateUser(c *gin.Context) {
+
+// 	var input dto.CreateUserData
+// 	if err := c.ShouldBindJSON(&input); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	user, err := services.CreateUser(input)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, user)
+// }

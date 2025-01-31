@@ -1,7 +1,7 @@
 version: "3" # composeファイルのバージョン
 services:
-  md2s: # サービス名
-    container_name: md2s
+  w3st-cms: # サービス名
+    container_name: w3st
     build:
       context: . # ビルドするコンテキストのパス
       dockerfile: ./build/go/Dockerfile # ビルドに使うDockerファイルのパス
@@ -27,7 +27,7 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
-      - ./build/postgresql/data:/var/lib/postgresql/data
+      - ./build/postgresql/data:/var/lib/postgresql/data # DBのデータを永続化
       - ./build/postgresql/init:/docker-entrypoint-initdb.d # DBを初期化
     ports:
       - ${DB_PORT}:${DB_PORT}

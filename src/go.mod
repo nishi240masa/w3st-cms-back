@@ -1,4 +1,4 @@
-module md2s
+module w3st
 
 go 1.23.3
 

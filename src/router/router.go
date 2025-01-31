@@ -2,9 +2,9 @@ package router
 
 import (
 	"fmt"
-	"md2s/controllers"
 	"os"
 	"time"
+	"w3st/controllers"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -19,6 +19,7 @@ func Init() {
 
 	r := gin.Default()
 
+	// CORSの設定
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},                                       // ここで特定のオリジンを許可することもできます（例: []string{"http://localhost:3000"})
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // 許可するHTTPメソッド
@@ -30,7 +31,7 @@ func Init() {
 	r.GET("/", func(c *gin.Context) {
 
 		c.JSON(200, gin.H{
-			"message": "connection success",
+			"message": "connection success!!!!",
 		})
 
 	})
@@ -38,7 +39,14 @@ func Init() {
 	// ユーザー
 	users := r.Group("/users")
 	// 全部取得
-	users.GET("/", controllers.GetUsers)
+	// users.GET("/", controllers.GetUsers)
+
+	// ユーザー登録
+	users.POST("/signup", controllers.Signup)
+
+	// ログイン
+	users.POST("/login", controllers.Login)
+
 
 	// サイト
 
