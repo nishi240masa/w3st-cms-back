@@ -23,7 +23,7 @@ func Init() {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},                                       // ここで特定のオリジンを許可することもできます（例: []string{"http://localhost:3000"})
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // 許可するHTTPメソッド
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"}, // 許可するヘッダー
+		AllowHeaders:     []string{ "Access-Control-Allow-Credentials","Access-Control-Allow-Headers","Origin", "Content-Type", "Authorization"}, // 許可するヘッダー
 		AllowCredentials: true,                                                // クレデンシャルを許可するかどうか
 		MaxAge:           12 * time.Hour,                                      // キャッシュの最大時間
 	}))

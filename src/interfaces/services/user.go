@@ -1,10 +1,14 @@
 package services
 
 import (
+	"os"
+	"time"
 	"w3st/dto"
 	"w3st/models"
 	"w3st/repositories"
+	"w3st/utils"
 
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -41,25 +45,54 @@ func Signup(input dto.SignupData) (*models.User, error) {
     return newUser, nil
 }
 
-func Login(input dto.LoginData) (*models.User, error) {
+func Login(input dto.LoginData) (*string, error) {
     
-        user, err := repositories.FindUser(input.Email)
+        foundUser, err := repositories.FindUser(input.Email)
         if err != nil {
             return nil, err
         }
     
-        if user == nil {
+        if foundUser == nil {
             return nil, nil
         }
     
         // パスワードの照合
-        err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
+        err = bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(input.Password))
         if err != nil {
             return nil, err
         }
+
+        // tokenの作成
+
+        userID, err := utils.UuidToUint(foundUser.ID)
+        if err != nil {
+            return nil, err
+        }
+
+        token, err := CreateToken(userID, foundUser.Email)
+        if err != nil {
+            return nil, err
+        }
+
     
-        return user, nil
+        return token, nil
     }
+
+
+func CreateToken(userId uint, email string) (*string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":   userId,
+		"email": email,
+		"exp":   time.Now().Add(time.Hour).Unix(),
+	})
+
+	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
+	if err != nil {
+		return nil, err
+	}
+	return &tokenString, nil
+}
+
 
 
 // func CreateUser(input dto.CreateUserData) (*models.User, error) {

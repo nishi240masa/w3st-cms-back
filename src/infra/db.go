@@ -25,6 +25,7 @@ func SetupDB() *gorm.DB {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
+		panic(err)
 	}
 
 	// すでにマイグレーション済みかチェック (users テーブルがあるか確認)

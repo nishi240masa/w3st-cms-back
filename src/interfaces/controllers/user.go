@@ -75,13 +75,18 @@ func Login(c *gin.Context) {
 	}
 
 	// ログイン
-	user, err := services.Login(input)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+	token, err := services.Login(input)
+		if err != nil {
+			if err.Error() == "User not found" {
+				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+		}
 
-	c.JSON(http.StatusOK, user)
+
+	c.JSON(http.StatusOK, token)
 }
 
 // func CreateUser(c *gin.Context) {
