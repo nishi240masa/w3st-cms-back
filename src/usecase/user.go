@@ -9,8 +9,8 @@ import (
 )
 
 type UserUsecase interface {
-	CreateUser(name string, email string, password string) (string, error)
-	FindUser(email string) (string, error)
+	Create(newUser *models.User) (string, error)
+	FindByEmail(email string) (string, error)
 }
 
 type userUsecase struct {
@@ -27,20 +27,14 @@ func NewUserUsecase(userRepo repositories.UserRepository, authService services.A
 	}
 }
 
-func (u *userUsecase) CreateUser(name string, email string, password string) (string, error) {
-	newUser := &models.User{
-		Name:     name,
-		Email:    email,
-		Password: password,
-	}
-	err := u.userRepo.CreateUser(newUser)
+func (u *userUsecase) Create(newUser *models.User) (string, error) {
+
+	err := u.userRepo.Create(newUser)
 	if err != nil {
 		return "", err
 	}
-	stringID, err := utils.UuidToString(newUser.ID)
-	if err != nil {
-		return "", err
-	}
+	stringID := utils.UuidToString(newUser.ID)
+	
 	token, err := u.authService.GenerateToken(stringID)
 	if err != nil {
 		return "", err
@@ -48,8 +42,8 @@ func (u *userUsecase) CreateUser(name string, email string, password string) (st
 	return token, nil
 }
 
-func (u *userUsecase) FindUser(email string) (string, error) {
-	user, err := u.userRepo.FindUser(email)
+func (u *userUsecase) FindByEmail(email string) (string, error) {
+	user, err := u.userRepo.FindByEmail(email)
 	if err != nil {
 		return "", err
 	}

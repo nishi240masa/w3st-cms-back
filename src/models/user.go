@@ -8,10 +8,6 @@ import (
 
 type UUID = uuid.UUID
 
-// StringToUUID
-func StringToUUID(s string) (UUID, error) {
-	return uuid.Parse(s)
-}
 
 type User struct {
 	ID        UUID     `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`

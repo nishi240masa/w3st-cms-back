@@ -27,7 +27,7 @@ func NewAuthService() AuthService {
 // tokenの生成
 func (a *authService) GenerateToken(userID string) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id": userID,
+		"sub": userID,
 		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -43,7 +43,11 @@ func (a *authService) ValidateToken(token string) (string, error) {
 		return []byte(a.secretKey), nil
 	})
 
-	if err != nil || !parsedToken.Valid {
+	if err != nil {
+		return "", err
+	}
+
+	if !parsedToken.Valid {
 		return "", errors.New("invalid token")
 	}
 

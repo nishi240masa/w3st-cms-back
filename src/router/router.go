@@ -20,7 +20,6 @@ func Init() {
 	}
 
 	db := infra.SetupDB()
-
 	f := factory.NewFactory(db)
 
 
@@ -47,7 +46,7 @@ func Init() {
 
 	// ユーザー
 	users := r.Group("/users")
-	userController := f.NewUserController()
+	userController := f.InitUserController()
 
 	// ユーザー登録
 	users.POST("/signup", userController.Signup)

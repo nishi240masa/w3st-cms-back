@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
 	"w3st/dto"
+	"w3st/models"
 	"w3st/usecase"
 
 	"github.com/gin-gonic/gin"
@@ -28,8 +30,14 @@ func (controller *UserController) Signup(c *gin.Context) {
 		return
 	}
 
+	newUser := &models.User{
+		Name:     input.Name,
+		Email:    input.Email,
+		Password: input.Password,
+	}
+
 	// ユーザー登録
-	user, err := controller.userUsecase.CreateUser(input.Name, input.Email, input.Password)
+	user, err := controller.userUsecase.Create(newUser)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -48,16 +56,15 @@ func (controller *UserController) Login(c *gin.Context) {
 	}
 
 	// ログイン
-	token, err := controller.userUsecase.FindUser(input.Email)
+	token, err := controller.userUsecase.FindByEmail(input.Email)
 		if err != nil {
-			if err.Error() == "User not found" {
-				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-				return
-			}
+			if errors.Is(err, errors.New("record not found")) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
+			}
 		}
 
 		c.JSON(http.StatusOK, gin.H{"token": token})
 
-	}
+}
+
