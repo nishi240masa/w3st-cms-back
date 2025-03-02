@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"w3st/errors"
 	"w3st/interfaces/repositories"
 	"w3st/interfaces/services"
 	"w3st/models"
@@ -9,8 +10,8 @@ import (
 )
 
 type UserUsecase interface {
-	Create(newUser *models.User) (string, error)
-	FindByEmail(email string) (string, error)
+	Create(newUser *models.User) (string, *errors.DomainError)
+	FindByEmail(email string) (string, *errors.DomainError)
 }
 
 type userUsecase struct {
@@ -27,30 +28,47 @@ func NewUserUsecase(userRepo repositories.UserRepository, authService services.A
 	}
 }
 
-func (u *userUsecase) Create(newUser *models.User) (string, error) {
+func (u *userUsecase) Create(newUser *models.User) (string, *errors.DomainError) {
 
-	err := u.userRepo.Create(newUser)
+	_, err := u.userRepo.FindByEmail(newUser.Email)
+	if err == nil {
+		// 既に登録されているメールアドレスの場合
+		return "", errors.NewDomainError(errors.AlreadyExist, "このメールアドレスは既に登録されています")
+	}
+
+
+	err = u.userRepo.Create(newUser)
 	if err != nil {
-		return "", err
+		// リポジトリで技術的なエラーが発生した場合
+		return "", errors.NewDomainError(errors.QueryError, err.Error())
+
 	}
 	stringID := utils.UuidToString(newUser.ID)
-	
+
 	token, err := u.authService.GenerateToken(stringID)
 	if err != nil {
-		return "", err
+		// トークン生成時にエラーが発生した場合
+		return "", errors.NewDomainError(errors.ErrorUnknown, err.Error())
 	}
 	return token, nil
 }
 
-func (u *userUsecase) FindByEmail(email string) (string, error) {
+func (u *userUsecase) FindByEmail(email string) (string, *errors.DomainError) {
 	user, err := u.userRepo.FindByEmail(email)
 	if err != nil {
-		return "", err
+		// リポジトリで技術的なエラーが発生した場合
+		return "", errors.NewDomainError(errors.QueryError, err.Error())
 	}
+	if user == nil {
+		// ユーザーが見つからなかった場合
+		return "", errors.NewDomainError(errors.QueryDataNotFoundError, "ユーザーが見つかりませんでした")
+	}
+	
 	response := u.userPresenter.ResponseUser(user)
 	token, err := u.authService.GenerateToken(response.ID.String())
 	if err != nil {
-		return "", err
+		// トークン生成時にエラーが発生した場合
+		return "", errors.NewDomainError(errors.ErrorUnknown, err.Error())
 	}
 	return token, nil
 }

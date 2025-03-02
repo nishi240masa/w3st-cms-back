@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"errors"
 	"net/http"
 	"w3st/dto"
 	"w3st/models"
@@ -39,7 +38,8 @@ func (controller *UserController) Signup(c *gin.Context) {
 	// ユーザー登録
 	user, err := controller.userUsecase.Create(newUser)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		conectErr := ErrorHandle(err)
+		c.JSON(HttpStatusCodeFromConnectCode(conectErr.Code()), gin.H{"error": conectErr.Message})
 		return
 	}
 
@@ -58,10 +58,9 @@ func (controller *UserController) Login(c *gin.Context) {
 	// ログイン
 	token, err := controller.userUsecase.FindByEmail(input.Email)
 		if err != nil {
-			if errors.Is(err, errors.New("record not found")) {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
+			conectErr := ErrorHandle(err)
+			c.JSON(HttpStatusCodeFromConnectCode(conectErr.Code()), gin.H{"error": conectErr.Message})
+			return
 		}
 
 		c.JSON(http.StatusOK, gin.H{"token": token})
