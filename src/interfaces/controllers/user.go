@@ -39,7 +39,7 @@ func (controller *UserController) Signup(c *gin.Context) {
 	user, err := controller.userUsecase.Create(newUser)
 	if err != nil {
 		conectErr := ErrorHandle(err)
-		c.JSON(HttpStatusCodeFromConnectCode(conectErr.Code()), gin.H{"error": conectErr.Message})
+		c.JSON(HttpStatusCodeFromConnectCode(conectErr.Code()), gin.H{"error": conectErr.Error()})
 		return
 	}
 
@@ -59,7 +59,7 @@ func (controller *UserController) Login(c *gin.Context) {
 	token, err := controller.userUsecase.FindByEmail(input.Email)
 		if err != nil {
 			conectErr := ErrorHandle(err)
-			c.JSON(HttpStatusCodeFromConnectCode(conectErr.Code()), gin.H{"error": conectErr.Message})
+			c.JSON(HttpStatusCodeFromConnectCode(conectErr.Code()), gin.H{"error": conectErr.Error()})
 			return
 		}
 
