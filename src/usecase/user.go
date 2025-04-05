@@ -1,74 +1,81 @@
 package usecase
 
 import (
+	"context" // context をインポート
+	"w3st/domain/models"
+	"w3st/domain/repositories"
 	"w3st/errors"
-	"w3st/interfaces/repositories"
 	"w3st/interfaces/services"
-	"w3st/models"
-	"w3st/presenter"
 	"w3st/utils"
 )
 
 type UserUsecase interface {
-	Create(newUser *models.User) (string, *errors.DomainError)
-	FindByEmail(email string) (string, *errors.DomainError)
+	Create(newUser *models.User) (models.Token, *errors.DomainError)
+	FindByEmail(email string) (models.Token, *errors.DomainError)
 }
 
 type userUsecase struct {
-	userRepo repositories.UserRepository
-	authService  services.AuthService
-	userPresenter presenter.UserPresenter
+	userRepo    repositories.UserRepository
+	authService services.AuthService
+	tx          repositories.TransactionRepository
 }
 
-func NewUserUsecase(userRepo repositories.UserRepository, authService services.AuthService, userPresenter presenter.UserPresenter) UserUsecase {
+func NewUserUsecase(userRepo repositories.UserRepository, authService services.AuthService, txRepo repositories.TransactionRepository) UserUsecase {
 	return &userUsecase{
-		userRepo: userRepo,
+		userRepo:    userRepo,
 		authService: authService,
-		userPresenter: userPresenter,
+		tx:          txRepo,
 	}
 }
 
-func (u *userUsecase) Create(newUser *models.User) (string, *errors.DomainError) {
+func (u *userUsecase) Create(newUser *models.User) (models.Token, *errors.DomainError) {
+	var generatedToken models.Token // トークンを格納する変数を宣言
 
-	_, err := u.userRepo.FindByEmail(newUser.Email)
-	if err == nil {
-		// 既に登録されているメールアドレスの場合
-		return "", errors.NewDomainError(errors.AlreadyExist, "このメールアドレスは既に登録されています")
-	}
+	err := u.tx.Do(context.Background(), func(ctx context.Context) error { 
+		_, findErr := u.userRepo.FindByEmail(ctx, newUser.Email) 
+		if findErr == nil {
+			// ユーザーがすでに存在する場合
+			return errors.NewDomainError(errors.AlreadyExist, "このメールアドレスは既に登録されています") 
+		} else if findErr.ErrType != errors.QueryDataNotFoundError {
+			// ユーザーが見つからなかった場合以外のエラー
+			return findErr
+		}
+		createErr := u.userRepo.Create(ctx, newUser) // context を渡す
+		if createErr != nil {
+			// リポジトリで技術的なエラーが発生した場合
+			return errors.NewDomainError(errors.QueryError, createErr.Error())
+		}
 
+		// token生成
+		stringID := utils.UuidToString(newUser.ID)
+		token, genErr := u.authService.GenerateToken(stringID)
+		if genErr != nil {
+			return genErr
+		}
+		generatedToken = token // トランザクション内で生成したトークンを格納
+		return nil             // エラーがなければ nil を返す
+	})
 
-	err = u.userRepo.Create(newUser)
 	if err != nil {
-		// リポジトリで技術的なエラーが発生した場合
-		return "", errors.NewDomainError(errors.QueryError, err.Error())
-
+		// トランザクション内でエラーが発生した場合
+		if domainErr, ok := err.(*errors.DomainError); ok {
+			// ドメインエラーの場合はそのまま返す
+			return "", domainErr
+		}
+		// その他のエラーの場合は一般的なエラーメッセージを返す
+		return "", errors.NewDomainError(errors.ErrorUnknown, "トランザクション中にエラーが発生しました")
 	}
-	stringID := utils.UuidToString(newUser.ID)
-
-	token, err := u.authService.GenerateToken(stringID)
-	if err != nil {
-		// トークン生成時にエラーが発生した場合
-		return "", errors.NewDomainError(errors.ErrorUnknown, err.Error())
-	}
-	return token, nil
+	return generatedToken, nil // トランザクションが成功したら生成されたトークンを返す
 }
 
-func (u *userUsecase) FindByEmail(email string) (string, *errors.DomainError) {
-	user, err := u.userRepo.FindByEmail(email)
+func (u *userUsecase) FindByEmail(email string) (models.Token, *errors.DomainError) {
+	user, err := u.userRepo.FindByEmail(context.Background(), email) 
 	if err != nil {
-		// リポジトリで技術的なエラーが発生した場合
-		return "", errors.NewDomainError(errors.QueryError, err.Error())
+		return "",err
 	}
-	if user == nil {
-		// ユーザーが見つからなかった場合
-		return "", errors.NewDomainError(errors.QueryDataNotFoundError, "ユーザーが見つかりませんでした")
-	}
-	
-	response := u.userPresenter.ResponseUser(user)
-	token, err := u.authService.GenerateToken(response.ID.String())
-	if err != nil {
-		// トークン生成時にエラーが発生した場合
-		return "", errors.NewDomainError(errors.ErrorUnknown, err.Error())
+	token, genErr := u.authService.GenerateToken(user.ID.String())
+	if genErr != nil {
+		return "", genErr
 	}
 	return token, nil
 }

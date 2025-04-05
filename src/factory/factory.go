@@ -1,11 +1,10 @@
 package factory
 
 import (
+	infrastructure "w3st/infra/repository"
 	"w3st/interfaces/controllers"
-	"w3st/interfaces/repositories"
 	"w3st/interfaces/services"
 	"w3st/presenter"
-
 	"w3st/usecase"
 
 	"gorm.io/gorm"
@@ -24,9 +23,10 @@ func NewFactory(db *gorm.DB) Factory {
 }
 
 func (f factory) InitUserController() *controllers.UserController {
-	userRepo := repositories.NewUserRepository(f.DB)
-	userPresenter := presenter.NewUserPresenter()
+	userRepo := infrastructure.NewUserRepositoryImpl(f.DB)
 	authService := services.NewAuthService()
-	userUsecase := usecase.NewUserUsecase(&userRepo, authService, userPresenter)
-	return controllers.NewUserController(userUsecase)
+	txRepo := infrastructure.NewTransactionRepositoryImpl(f.DB)
+	userUsecase := usecase.NewUserUsecase(userRepo, authService, txRepo)
+	userPresenter := presenter.NewUserPresenter()
+	return controllers.NewUserController(userUsecase, authService, userPresenter)
 }

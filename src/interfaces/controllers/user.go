@@ -2,8 +2,10 @@ package controllers
 
 import (
 	"net/http"
+	"w3st/domain/models"
 	"w3st/dto"
-	"w3st/models"
+	"w3st/interfaces/services"
+	"w3st/presenter"
 	"w3st/usecase"
 
 	"github.com/gin-gonic/gin"
@@ -12,20 +14,25 @@ import (
 
 type UserController struct{
 	userUsecase usecase.UserUsecase
+	authService services.AuthService
+	userPresenter presenter.UserPresenter
 }
 
-func NewUserController(userUsecase usecase.UserUsecase) *UserController {
+
+func NewUserController(userUsecase usecase.UserUsecase,authService services.AuthService,userPresenter presenter.UserPresenter ) *UserController {
 	return &UserController{
 		userUsecase: userUsecase,
+		authService: authService,
+		userPresenter: userPresenter,
 	}
 }
 
-func (controller *UserController) Signup(c *gin.Context) {
+func (c *UserController) Signup(ctx *gin.Context) {
 	var input dto.SignupData
 
 	// リクエストのバインド
-	if  err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if  err := ctx.ShouldBindJSON(&input); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -36,14 +43,15 @@ func (controller *UserController) Signup(c *gin.Context) {
 	}
 
 	// ユーザー登録
-	user, err := controller.userUsecase.Create(newUser)
+	token, err := c.userUsecase.Create(newUser)
 	if err != nil {
 		conectErr := ErrorHandle(err)
-		c.JSON(HttpStatusCodeFromConnectCode(conectErr.Code()), gin.H{"error": conectErr.Error()})
+		ctx.JSON(HttpStatusCodeFromConnectCode(conectErr.Code()), gin.H{"error": conectErr.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	// jwtトークンをクライアントに返す
+	ctx.JSON(http.StatusOK, token)
 }
 
 func (controller *UserController) Login(c *gin.Context) {

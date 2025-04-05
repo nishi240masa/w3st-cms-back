@@ -18,6 +18,7 @@ const (
 	QueryError
 	QueryDataNotFoundError
 	ErrorUnknown
+	TransactionError
 )
 
 func (e *DomainError) Error() string {

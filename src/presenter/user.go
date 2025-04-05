@@ -1,7 +1,7 @@
 package presenter
 
 import (
-	"w3st/models"
+	"w3st/domain/models"
 
 	"github.com/google/uuid"
 )
