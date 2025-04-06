@@ -1,0 +1,394 @@
+openapi: 3.0.2
+info:
+  title: Dynamic API Schema Service
+  version: 1.0.0
+  description: ユーザーが動的にAPIスキーマとデータ構造を定義できるサービス
+
+servers:
+  - url: https://api.example.com/v1
+
+tags:
+  - name: Users
+  - name: Collections
+  - name: Fields
+  - name: Entries
+  - name: ListOptions
+  - name: Relations
+
+paths:
+  /users/signup:
+    post:
+      tags: [Users]
+      summary: ユーザー登録
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: ユーザー作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+
+  /users/login:
+    post:
+      tags: [Users]
+      summary: ログイン
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: JWT トークン返却
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: ログイン中ユーザー情報
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: ユーザー情報
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserGetResponse"
+
+  /collections:
+    get:
+      tags: [Collections]
+      summary: 自分のコレクション一覧
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 一覧取得
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CollectionResponse"
+    post:
+      tags: [Collections]
+      summary: コレクション作成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionInput"
+      responses:
+        "201":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponse"
+
+  /collections/{collectionId}:
+    get:
+      tags: [Collections]
+      summary: コレクション詳細
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: コレクション情報
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponse"
+
+    delete:
+      tags: [Collections]
+      summary: コレクション削除
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: 削除成功
+
+  /collections/{collectionId}/fields:
+    get:
+      tags: [Fields]
+      summary: フィールド一覧
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 一覧取得
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FieldResponse"
+
+    post:
+      tags: [Fields]
+      summary: フィールド作成
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FieldInput"
+      responses:
+        "201":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FieldResponse"
+
+  /fields/{fieldId}/options:
+    post:
+      tags: [ListOptions]
+      summary: 選択肢を追加
+      parameters:
+        - name: fieldId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  type: string
+      responses:
+        "201":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptionResponse"
+
+  /collections/{collectionId}/entries:
+    get:
+      tags: [Entries]
+      summary: データ一覧
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 一覧取得
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EntryResponse"
+    post:
+      tags: [Entries]
+      summary: データ追加
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "201":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntryResponse"
+
+  /collections/{collectionId}/relations:
+    post:
+      tags: [Relations]
+      summary: 他のコレクションとのリレーション追加
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                related_collection_id:
+                  type: integer
+                relation_type:
+                  type: string
+      responses:
+        "201":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RelationResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    UserInput:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+
+    UserResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserGetResponse"
+
+    UserGetResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+
+    CollectionInput:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    CollectionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldResponse"
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntryResponse"
+        relations:
+          type: array
+          items:
+            $ref: "#/components/schemas/RelationResponse"
+
+    FieldInput:
+      type: object
+      properties:
+        field_id:
+          type: string
+        view_name:
+          type: string
+        field_type:
+          type: string
+          enum: [text, number, boolean, select, dropdown, relation]
+        is_required:
+          type: boolean
+        default_value:
+          type: object
+
+    FieldResponse:
+      allOf:
+        - $ref: "#/components/schemas/FieldInput"
+        - type: object
+          properties:
+            id:
+              type: integer
+            options:
+              type: array
+              items:
+                $ref: "#/components/schemas/OptionResponse"
+
+    EntryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        data:
+          type: object
+          additionalProperties: true
+
+    RelationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        related_collection_id:
+          type: integer
+        relation_type:
+          type: string
+
+    OptionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        value:
+          type: string
