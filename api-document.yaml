@@ -1,6 +1,6 @@
 openapi: 3.0.2
 info:
-  title: Dynamic API Schema Service
+  title: w3st CMS API
   version: 1.0.0
   description: ユーザーが動的にAPIスキーマとデータ構造を定義できるサービス
 
