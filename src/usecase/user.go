@@ -10,7 +10,7 @@ import (
 )
 
 type UserUsecase interface {
-	Create(newUser *models.User) (models.Token, *errors.DomainError)
+	Create(newUser *models.User, ctx context.Context ) (models.Token, *errors.DomainError)
 	FindByEmail(email string) (models.Token, *errors.DomainError)
 }
 
@@ -28,10 +28,11 @@ func NewUserUsecase(userRepo repositories.UserRepository, authService services.A
 	}
 }
 
-func (u *userUsecase) Create(newUser *models.User) (models.Token, *errors.DomainError) {
+func (u *userUsecase) Create(newUser *models.User,ctx context.Context) (models.Token, *errors.DomainError) {
 	var generatedToken models.Token // トークンを格納する変数を宣言
 
-	err := u.tx.Do(context.Background(), func(ctx context.Context) error { 
+	// トランザクションを開始
+	err := u.tx.Do(ctx, func(txCtx context.Context) error {
 		_, findErr := u.userRepo.FindByEmail(ctx, newUser.Email) 
 		if findErr == nil {
 			// ユーザーがすでに存在する場合

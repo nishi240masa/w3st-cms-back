@@ -43,7 +43,7 @@ func (c *UserController) Signup(ctx *gin.Context) {
 	}
 
 	// ユーザー登録
-	token, err := c.userUsecase.Create(newUser)
+	token, err := c.userUsecase.Create(newUser, ctx.Request.Context())
 	if err != nil {
 		conectErr := ErrorHandle(err)
 		ctx.JSON(HttpStatusCodeFromConnectCode(conectErr.Code()), gin.H{"error": conectErr.Error()})
