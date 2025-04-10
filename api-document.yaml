@@ -5,7 +5,8 @@ info:
   description: ユーザーが動的にAPIスキーマとデータ構造を定義できるサービス
 
 servers:
-  - url: https://api.example.com/v1
+  - url: http://localhost:8080
+    description: 開発環境
 
 tags:
   - name: Users

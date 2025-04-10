@@ -22,17 +22,15 @@ func Init() {
 	db := infra.SetupDB()
 	f := factory.NewFactory(db)
 
-
 	// ルーターの初期化
 	r := gin.Default()
 
 	// CORSの設定
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},                                      // 許可するオリジン
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // 許可するHTTPメソッド
-		AllowHeaders:     []string{ "Access-Control-Allow-Credentials","Access-Control-Allow-Headers","Origin", "Content-Type", "Authorization"}, // 許可するヘッダー
-		AllowCredentials: true,                                                // クレデンシャルを許可するかどうか
-		MaxAge:           12 * time.Hour,                                      // キャッシュの最大時間
+		AllowOrigins: []string{"*"},                                                                                                           // 許可するオリジン
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},                                                                     // 許可するHTTPメソッド
+		AllowHeaders: []string{"Access-Control-Allow-Credentials", "Access-Control-Allow-Headers", "Origin", "Content-Type", "Authorization"}, // 許可するヘッダー
+		MaxAge:       12 * time.Hour,                                                                                                          // キャッシュの最大時間
 	}))
 
 	// connectionTest
