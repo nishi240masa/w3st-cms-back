@@ -21,8 +21,21 @@ type contextKey string
 const txKey contextKey = "tx"
 
 func (t *TransactionRepositoryImpl) Do(ctx context.Context, f func(ctx context.Context) error) error {
+
 	// この関数は、トランザクションを開始し、f関数を実行します。
 	return t.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+
+		//　トランザクション内でpanicが発生した場合、ロールバックを行う
+		defer func() {
+			if r := recover(); r != nil {
+				tx.Rollback()
+				// panicの内容をエラーメッセージとして返す
+				err := errors.NewDomainError(errors.TransactionError, "トランザクション中にpanicが発生しました: "+r.(string))
+				// panicの内容をエラーメッセージとして返す
+				panic(err)
+			}
+		}()
+
 		// トランザクションのコンテキストを作成
 		txCtx := context.WithValue(ctx, txKey, tx)
 
