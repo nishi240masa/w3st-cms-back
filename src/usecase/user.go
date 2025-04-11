@@ -10,7 +10,7 @@ import (
 )
 
 type UserUsecase interface {
-	Create(newUser *models.User, ctx context.Context ) (models.Token, *errors.DomainError)
+	Create(newUser *models.User, ctx context.Context) (models.Token, *errors.DomainError)
 	FindByEmail(email string) (models.Token, *errors.DomainError)
 }
 
@@ -28,30 +28,30 @@ func NewUserUsecase(userRepo repositories.UserRepository, authService services.A
 	}
 }
 
-func (u *userUsecase) Create(newUser *models.User,ctx context.Context) (models.Token, *errors.DomainError) {
+func (u *userUsecase) Create(newUser *models.User, ctx context.Context) (models.Token, *errors.DomainError) {
 	var generatedToken models.Token // トークンを格納する変数を宣言
 
 	// トランザクションを開始
 	err := u.tx.Do(ctx, func(txCtx context.Context) error {
-		_, findErr := u.userRepo.FindByEmail(ctx, newUser.Email) 
-		if findErr == nil {
+		_, err := u.userRepo.FindByEmail(ctx, newUser.Email)
+		if err == nil {
 			// ユーザーがすでに存在する場合
-			return errors.NewDomainError(errors.AlreadyExist, "このメールアドレスは既に登録されています") 
-		} else if findErr.ErrType != errors.QueryDataNotFoundError {
+			return errors.NewDomainError(errors.AlreadyExist, "このメールアドレスは既に登録されています")
+		} else if err.ErrType != errors.QueryDataNotFoundError {
 			// ユーザーが見つからなかった場合以外のエラー
-			return findErr
+			return err
 		}
-		createErr := u.userRepo.Create(ctx, newUser) // context を渡す
-		if createErr != nil {
+		err = u.userRepo.Create(ctx, newUser) // context を渡す
+		if err != nil {
 			// リポジトリで技術的なエラーが発生した場合
-			return errors.NewDomainError(errors.QueryError, createErr.Error())
+			return errors.NewDomainError(errors.QueryError, err.Error())
 		}
 
 		// token生成
 		stringID := utils.UuidToString(newUser.ID)
-		token, genErr := u.authService.GenerateToken(stringID)
-		if genErr != nil {
-			return genErr
+		token, err := u.authService.GenerateToken(stringID)
+		if err != nil {
+			return err
 		}
 		generatedToken = token // トランザクション内で生成したトークンを格納
 		return nil             // エラーがなければ nil を返す
@@ -59,9 +59,9 @@ func (u *userUsecase) Create(newUser *models.User,ctx context.Context) (models.T
 
 	if err != nil {
 		// トランザクション内でエラーが発生した場合
-		if domainErr, ok := err.(*errors.DomainError); ok {
+		if err, ok := err.(*errors.DomainError); ok {
 			// ドメインエラーの場合はそのまま返す
-			return "", domainErr
+			return "", err
 		}
 		// その他のエラーの場合は一般的なエラーメッセージを返す
 		return "", errors.NewDomainError(errors.ErrorUnknown, "トランザクション中にエラーが発生しました")
@@ -70,13 +70,13 @@ func (u *userUsecase) Create(newUser *models.User,ctx context.Context) (models.T
 }
 
 func (u *userUsecase) FindByEmail(email string) (models.Token, *errors.DomainError) {
-	user, err := u.userRepo.FindByEmail(context.Background(), email) 
+	user, err := u.userRepo.FindByEmail(context.Background(), email)
 	if err != nil {
-		return "",err
+		return "", err
 	}
-	token, genErr := u.authService.GenerateToken(user.ID.String())
-	if genErr != nil {
-		return "", genErr
+	token, err := u.authService.GenerateToken(user.ID.String())
+	if err != nil {
+		return "", err
 	}
 	return token, nil
 }

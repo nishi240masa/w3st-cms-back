@@ -11,18 +11,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
-type UserController struct{
-	userUsecase usecase.UserUsecase
-	authService services.AuthService
+type UserController struct {
+	userUsecase   usecase.UserUsecase
+	authService   services.AuthService
 	userPresenter presenter.UserPresenter
 }
 
-
-func NewUserController(userUsecase usecase.UserUsecase,authService services.AuthService,userPresenter presenter.UserPresenter ) *UserController {
+func NewUserController(userUsecase usecase.UserUsecase, authService services.AuthService, userPresenter presenter.UserPresenter) *UserController {
 	return &UserController{
-		userUsecase: userUsecase,
-		authService: authService,
+		userUsecase:   userUsecase,
+		authService:   authService,
 		userPresenter: userPresenter,
 	}
 }
@@ -31,7 +29,7 @@ func (c *UserController) Signup(ctx *gin.Context) {
 	var input dto.SignupData
 
 	// リクエストのバインド
-	if  err := ctx.ShouldBindJSON(&input); err != nil {
+	if err := ctx.ShouldBindJSON(&input); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -45,8 +43,8 @@ func (c *UserController) Signup(ctx *gin.Context) {
 	// ユーザー登録
 	token, err := c.userUsecase.Create(newUser, ctx.Request.Context())
 	if err != nil {
-		conectErr := ErrorHandle(err)
-		ctx.JSON(HttpStatusCodeFromConnectCode(conectErr.Code()), gin.H{"error": conectErr.Error()})
+		err := ErrorHandle(err)
+		ctx.JSON(HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -54,24 +52,23 @@ func (c *UserController) Signup(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, token)
 }
 
-func (controller *UserController) Login(c *gin.Context) {
+func (c *UserController) Login(ctx *gin.Context) {
 	var input dto.LoginData
 
 	// リクエストのバインド
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := ctx.ShouldBindJSON(&input); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// ログイン
-	token, err := controller.userUsecase.FindByEmail(input.Email)
-		if err != nil {
-			conectErr := ErrorHandle(err)
-			c.JSON(HttpStatusCodeFromConnectCode(conectErr.Code()), gin.H{"error": conectErr.Error()})
-			return
-		}
+	token, err := c.userUsecase.FindByEmail(input.Email)
+	if err != nil {
+		err := ErrorHandle(err)
+		ctx.JSON(HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
+		return
+	}
 
-		c.JSON(http.StatusOK, gin.H{"token": token})
+	ctx.JSON(http.StatusOK, gin.H{"token": token})
 
 }
-
