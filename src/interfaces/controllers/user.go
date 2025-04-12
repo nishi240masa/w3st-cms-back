@@ -34,11 +34,14 @@ func (c *UserController) Signup(ctx *gin.Context) {
 		return
 	}
 
-	newUser := &models.User{
+	newUser := &models.Users{
 		Name:     input.Name,
 		Email:    input.Email,
 		Password: input.Password,
 	}
+
+	//fmt.Println("input:", input)
+	//fmt.Println("newUser:", newUser.Name)
 
 	// ユーザー登録
 	token, err := c.userUsecase.Create(newUser, ctx.Request.Context())

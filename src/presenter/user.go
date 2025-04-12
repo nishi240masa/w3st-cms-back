@@ -7,14 +7,14 @@ import (
 )
 
 type UserResponse struct {
-	ID    uuid.UUID   `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
+	ID    uuid.UUID `json:"id"`
+	Name  string    `json:"name"`
+	Email string    `json:"email"`
+	Role  string    `json:"role"`
 }
 
 type UserPresenter interface {
-	ResponseUser(user *models.User) *UserResponse
+	ResponseUser(user *models.Users) *UserResponse
 }
 
 type userPresenter struct{}
@@ -23,7 +23,7 @@ func NewUserPresenter() UserPresenter {
 	return &userPresenter{}
 }
 
-func (u *userPresenter) ResponseUser(user *models.User) *UserResponse {
+func (u *userPresenter) ResponseUser(user *models.Users) *UserResponse {
 	return &UserResponse{
 		ID:    user.ID,
 		Name:  user.Name,
