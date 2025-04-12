@@ -7,6 +7,6 @@ import (
 )
 
 type UserRepository interface {
-	Create(ctx context.Context,newUser *models.User)  *errors.DomainError
-	FindByEmail(ctx context.Context,email string) (*models.User,  *errors.DomainError)
+	Create(ctx context.Context, newUser *models.Users) *errors.DomainError
+	FindByEmail(ctx context.Context, email string) (*models.Users, *errors.DomainError)
 }
