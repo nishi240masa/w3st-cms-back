@@ -11,7 +11,7 @@ import (
 )
 
 type UserUsecase interface {
-	Create(newUser *models.User, ctx context.Context) (models.Token, *myerrors.DomainError)
+	Create(newUser *models.Users, ctx context.Context) (models.Token, *myerrors.DomainError)
 	FindByEmail(email string) (models.Token, *myerrors.DomainError)
 }
 
@@ -29,37 +29,35 @@ func NewUserUsecase(userRepo repositories.UserRepository, authService services.A
 	}
 }
 
-func (u *userUsecase) Create(newUser *models.User, ctx context.Context) (models.Token, *myerrors.DomainError) {
+func (u *userUsecase) Create(newUser *models.Users, ctx context.Context) (models.Token, *myerrors.DomainError) {
 	var generatedToken models.Token // トークンを格納する変数を宣言
 
 	// トランザクションを開始
 	err := u.tx.Do(ctx, func(txCtx context.Context) error {
-		user, err := u.userRepo.FindByEmail(ctx, newUser.Email)
-
-		if user != nil {
-			// ユーザーがすでに存在する場合
-			return myerrors.NewDomainError(myerrors.AlreadyExist, "このメールアドレスは既に登録されています")
-		}
-		if err != nil && errors.Is(err, &myerrors.DomainError{ErrType: myerrors.QueryError}) {
-			// ユーザーが見つからなかった場合以外のエラー
-			return err
-		}
+		_, err := u.userRepo.FindByEmail(ctx, newUser.Email)
 
 		// ユーザーが見つからなかった場合は新規作成
-		err = u.userRepo.Create(ctx, newUser) // context を渡す
-		if err != nil {
+		if errors.Is(err, &myerrors.DomainError{ErrType: myerrors.QueryDataNotFoundError}) {
+			err = u.userRepo.Create(ctx, newUser) // context を渡す
+			if err != nil {
+				// リポジトリで技術的なエラーが発生した場合
+				return myerrors.NewDomainError(myerrors.QueryError, err.Error())
+			}
+
+			// token生成
+			stringID := utils.UuidToString(newUser.ID)
+			token, err := u.authService.GenerateToken(stringID)
+			if err != nil {
+				return err
+			}
+			generatedToken = token // トランザクション内で生成したトークンを格納
+			return nil
+		} else if err != nil {
 			// リポジトリで技術的なエラーが発生した場合
 			return myerrors.NewDomainError(myerrors.QueryError, err.Error())
 		}
-
-		// token生成
-		stringID := utils.UuidToString(newUser.ID)
-		token, err := u.authService.GenerateToken(stringID)
-		if err != nil {
-			return err
-		}
-		generatedToken = token // トランザクション内で生成したトークンを格納
-		return nil             // エラーがなければ nil を返す
+		// ユーザーが見つかった場合はエラーを返す
+		return myerrors.NewDomainError(myerrors.AlreadyExist, "このメールアドレスは既に登録されています")
 	})
 
 	if err != nil {
