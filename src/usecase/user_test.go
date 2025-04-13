@@ -6,12 +6,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"w3st/domain/models"
 	myerrors "w3st/errors"
-	mock_repositories "w3st/mock/repositories"
-	mock_services "w3st/mock/services"
+	mockRepositories "w3st/mock/repositories"
+	mockServices "w3st/mock/services"
 	"w3st/usecase"
 )
 
@@ -19,17 +18,17 @@ func TestUserUsecase_Create_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockUserRepo := mock_repositories.NewMockUserRepository(ctrl)
-	mockAuthService := mock_services.NewMockAuthService(ctrl)
-	mockTx := mock_repositories.NewMockTransactionRepository(ctrl)
+	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
+	mockAuthService := mockServices.NewMockAuthService(ctrl)
+	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
 
 	uc := usecase.NewUserUsecase(mockUserRepo, mockAuthService, mockTx)
 
 	newUser := &models.Users{
-		ID:    uuid.New(),
-		Email: "test@example.com",
+		Name:     "Test User",
+		Email:    "test@example.com",
+		Password: "password123",
 	}
-
 	// モックの期待値設定
 	mockTx.
 		EXPECT().
