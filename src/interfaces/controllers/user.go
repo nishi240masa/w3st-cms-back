@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"w3st/domain/models"
 	"w3st/dto"
+	myerrors "w3st/errors"
 	"w3st/interfaces/services"
 	"w3st/presenter"
 	"w3st/usecase"
@@ -40,14 +41,17 @@ func (c *UserController) Signup(ctx *gin.Context) {
 		Password: input.Password,
 	}
 
-	//fmt.Println("input:", input)
-	//fmt.Println("newUser:", newUser.Name)
-
 	// ユーザー登録
 	token, err := c.userUsecase.Create(newUser, ctx.Request.Context())
 	if err != nil {
-		err := ErrorHandle(err)
-		ctx.JSON(HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
+		if domainErr, ok := err.(*myerrors.DomainError); ok {
+
+			err := ErrorHandle(domainErr)
+			ctx.JSON(HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
+			return
+		}
+		// その他のエラー
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 		return
 	}
 
@@ -67,8 +71,13 @@ func (c *UserController) Login(ctx *gin.Context) {
 	// ログイン
 	token, err := c.userUsecase.FindByEmail(input.Email)
 	if err != nil {
-		err := ErrorHandle(err)
-		ctx.JSON(HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
+		if domainErr, ok := err.(*myerrors.DomainError); ok {
+			err := ErrorHandle(domainErr)
+			ctx.JSON(HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
+			return
+		}
+		// その他のエラー
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 		return
 	}
 

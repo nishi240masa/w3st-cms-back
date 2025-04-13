@@ -37,14 +37,18 @@ func (e *DomainError) Unwrap() error {
 }
 
 func (e *DomainError) Is(target error) bool {
-	if e == nil {
+
+	if e == nil || target == nil {
 		return false
 	}
-	var targetErr *DomainError
-	if errors.As(target, &targetErr) {
-		return e.ErrType == targetErr.ErrType
+
+	var t *DomainError
+	t, ok := target.(*DomainError)
+	if !ok || t == nil {
+		return false
 	}
-	return false
+
+	return e.ErrType == t.ErrType
 }
 
 func (e *DomainError) GetType() ErrorType {

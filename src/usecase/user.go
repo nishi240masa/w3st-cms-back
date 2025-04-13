@@ -11,8 +11,8 @@ import (
 )
 
 type UserUsecase interface {
-	Create(newUser *models.Users, ctx context.Context) (models.Token, *myerrors.DomainError)
-	FindByEmail(email string) (models.Token, *myerrors.DomainError)
+	Create(newUser *models.Users, ctx context.Context) (models.Token, error)
+	FindByEmail(email string) (models.Token, error)
 }
 
 type userUsecase struct {
@@ -29,7 +29,7 @@ func NewUserUsecase(userRepo repositories.UserRepository, authService services.A
 	}
 }
 
-func (u *userUsecase) Create(newUser *models.Users, ctx context.Context) (models.Token, *myerrors.DomainError) {
+func (u *userUsecase) Create(newUser *models.Users, ctx context.Context) (models.Token, error) {
 	var generatedToken models.Token // トークンを格納する変数を宣言
 
 	// トランザクションを開始
@@ -37,7 +37,7 @@ func (u *userUsecase) Create(newUser *models.Users, ctx context.Context) (models
 		_, err := u.userRepo.FindByEmail(ctx, newUser.Email)
 
 		// ユーザーが見つからなかった場合は新規作成
-		if errors.Is(err, &myerrors.DomainError{ErrType: myerrors.QueryDataNotFoundError}) {
+		if err != nil && errors.Is(err, &myerrors.DomainError{ErrType: myerrors.QueryDataNotFoundError}) {
 			err = u.userRepo.Create(ctx, newUser) // context を渡す
 			if err != nil {
 				// リポジトリで技術的なエラーが発生した場合
@@ -62,17 +62,19 @@ func (u *userUsecase) Create(newUser *models.Users, ctx context.Context) (models
 
 	if err != nil {
 		// トランザクション内でエラーが発生した場合
-		if err, ok := err.(*myerrors.DomainError); ok {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
 			// ドメインエラーの場合はそのまま返す
-			return "", err
+			return "", domainErr
 		}
 		// その他のエラーの場合は一般的なエラーメッセージを返す
 		return "", myerrors.NewDomainError(myerrors.ErrorUnknown, "トランザクション中にエラーが発生しました")
 	}
-	return generatedToken, nil // トランザクションが成功したら生成されたトークンを返す
+	// トランザクションが成功した場合は、生成されたトークンを返す
+	return generatedToken, nil
 }
 
-func (u *userUsecase) FindByEmail(email string) (models.Token, *myerrors.DomainError) {
+func (u *userUsecase) FindByEmail(email string) (models.Token, error) {
 	user, err := u.userRepo.FindByEmail(context.Background(), email)
 	if err != nil {
 		return "", err
