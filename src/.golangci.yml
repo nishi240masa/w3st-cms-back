@@ -2,17 +2,13 @@ version: "2"
 
 run:
   timeout: 5m
+issues:
+  exclude-dirs:
+    - mocks
+    - tmp
 
-skip-dirs:
-  - mocks
-  - tmp
 
-skip-files:
-  - cover.out
-  - cover.html
-  - .air.toml
-
-linters:
-  enable:
-    - errcheck
-    - unused
+  exclude-files:
+    - cover.out
+    - cover.html
+    - .air.toml
