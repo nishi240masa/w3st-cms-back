@@ -1,11 +1,18 @@
-version: "2" # 文字列にすること！
+version: "2"
 
 run:
   timeout: 5m
-  skip-dirs:
-    - mocks
-    - tmp
-  skip-files:
-    - cover.out
-    - cover.html
-    - .air.toml
+
+skip-dirs:
+  - mocks
+  - tmp
+
+skip-files:
+  - cover.out
+  - cover.html
+  - .air.toml
+
+linters:
+  enable:
+    - errcheck
+    - unused
