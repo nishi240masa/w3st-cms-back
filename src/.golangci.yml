@@ -1,13 +1,11 @@
-version: 2
+version: "2" # 文字列にすること！
 
 run:
   timeout: 5m
-
-issues:
-  exclude-dirs:
+  skip-dirs:
     - mocks
     - tmp
-  exclude-files:
+  skip-files:
     - cover.out
     - cover.html
     - .air.toml
