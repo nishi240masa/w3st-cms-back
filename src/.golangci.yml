@@ -1,14 +1,34 @@
-version: "1.55.2"
+version: "2"
 
 run:
   timeout: 5m
-issues:
-  exclude-dirs:
-    - mocks
-    - tmp
 
+linters:
+  # 全ての linter を無効化
+  disable-all: true
 
-  exclude-files:
-    - cover.out
-    - cover.html
-    - .air.toml
+  # 指定した linter のみ有効化
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - misspell
+  issues:
+    exclude-rules:
+      #　testファイルを除外
+      - path: _test\.go
+        linters:
+          - gocyclo
+          - gosec
+          - exhaustruct
+#    除外するディレクトリ
+    exclude-dirs:
+      - mocks
+      - tmp
+
+    # 除外するファイル
+    exclude-files:
+      - cover.out
+      - cover.html
+      - .air.toml
