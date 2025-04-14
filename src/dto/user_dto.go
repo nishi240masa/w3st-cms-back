@@ -1,12 +1,12 @@
 package dto
 
 type SignupData struct {
-	Name     string `json:"name" bindings:"required"`
-	Email    string `json:"email" bindings:"required"`
-	Password string `json:"password" bindings:"required"`
+	Name     string `json:"name" binding:"required,min=1"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=1"`
 }
 
 type LoginData struct {
-	Email    string `json:"email" bindings:"required"`
-	Password string `json:"password" bindings:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=1"`
 }
