@@ -31,14 +31,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Goのlintインストール
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.56.2
 
-      - name: Goのlint実行
-        working-directory: ./src
-        run: golangci-lint run
-
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.0
 
 
       - name: Goのテスト実行&カバレッジ取得

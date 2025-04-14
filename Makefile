@@ -48,9 +48,4 @@ mock-all: mock-user mock-auth mock-tx
 
 .PHONY: lint
 lint:
-	cd src && golangci-lint run ./... \
-		--skip-dirs=mocks \
-		--skip-dirs=tmp \
-		--skip-files=cover.out \
-		--skip-files=cover.html \
-		--skip-files=.air.toml
+	cd src && golangci-lint run ./... --timeout 5m
