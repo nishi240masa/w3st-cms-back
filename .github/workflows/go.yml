@@ -36,7 +36,8 @@ jobs:
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.56.2
 
       - name: Goのlint実行
-        run: golangci-lint run --path-prefix ./src
+        run: golangci-lint run
+        working-directory: ./src
 
       - name: Goのテスト実行&カバレッジ取得
         run: go test ./... -v -coverprofile=coverage.out
