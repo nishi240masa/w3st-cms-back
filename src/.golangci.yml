@@ -14,21 +14,21 @@ linters:
     - staticcheck
     - unused
     - misspell
-  issues:
-    exclude-rules:
-      #　testファイルを除外
-      - path: _test\.go
-        linters:
-          - gocyclo
-          - gosec
-          - exhaustruct
-#    除外するディレクトリ
-    exclude-dirs:
-      - mocks
-      - tmp
+issues:
+  exclude-rules:
+#testファイルを除外
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - gosec
+        - exhaustruct
+# 除外するディレクトリ
+  exclude-dirs:
+    - mocks
+    - tmp
 
     # 除外するファイル
-    exclude-files:
-      - cover.out
-      - cover.html
-      - .air.toml
+  exclude-files:
+    - cover.out
+    - cover.html
+    - .air.toml
