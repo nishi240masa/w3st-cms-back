@@ -37,12 +37,8 @@ jobs:
 
       - name: Goのlint実行
         working-directory: ./src
-        run: |
-          golangci-lint run \
-          --issues-exit-code=1 \
-          --issues.exclude-dirs=mocks,tmp \
-          --issues.exclude-files=cover.out,cover.html,.air.toml \
-          --timeout=5m
+        run: golangci-lint run
+
 
 
       - name: Goのテスト実行&カバレッジ取得

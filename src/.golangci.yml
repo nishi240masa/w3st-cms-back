@@ -1,0 +1,11 @@
+run:
+  timeout: 5m
+
+issues:
+  exclude-dirs:
+    - mocks
+    - tmp
+  exclude-files:
+    - cover.out
+    - cover.html
+    - .air.toml
