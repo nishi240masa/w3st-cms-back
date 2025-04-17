@@ -1,34 +1,86 @@
 version: "2"
-
 run:
-  timeout: 5m
-
+  allow-parallel-runners: true
 linters:
-  # 全ての linter を無効化
-  disable-all: true
-
-  # 指定した linter のみ有効化
   enable:
-    - govet
-    - errcheck
-    - staticcheck
-    - unused
+    - bodyclose
+    - canonicalheader
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - dupl
+    - durationcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - fatcontext
+    - forcetypeassert
+    - gocheckcompilerdirectives
+    - goconst
+    - gocritic
+    - gocyclo
+    - lll
+    - loggercheck
+    - makezero
     - misspell
+    - musttag
+    - nakedret
+    - noctx
+    - nolintlint
+    - nosprintfhostport
+    - paralleltest
+    - prealloc
+    - promlinter
+    - testifylint
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wastedassign
+    - whitespace
+    - wrapcheck
+  settings:
+    copyloopvar:
+      check-alias: true
+    goconst:
+      ignore-strings: "true"
+    gocritic:
+      disabled-checks:
+        - assignOp
+        - ifElseChain
+    testifylint:
+      enable-all: true
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - lll
+        path: .air.toml
+      - linters:
+          - lll
+        path: cover.*
+      - linters:
+          - lll
+        path: internal/.*
+      - linters:
+          - dupl
+        path: .*_test.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  exclude-rules:
-#testファイルを除外
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - gosec
-        - exhaustruct
-# 除外するディレクトリ
-  exclude-dirs:
-    - mocks
-    - tmp
-
-    # 除外するファイル
-  exclude-files:
-    - cover.out
-    - cover.html
-    - .air.toml
+  max-issues-per-linter: 0
+  max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
