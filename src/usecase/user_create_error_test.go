@@ -4,16 +4,21 @@ import (
 	"context"
 	"testing"
 
+	"w3st/domain/models"
+	"w3st/usecase"
+
+	"github.com/stretchr/testify/require"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"w3st/domain/models"
+
 	myerrors "w3st/errors"
 	mockRepositories "w3st/mock/repositories"
 	mockServices "w3st/mock/services"
-	"w3st/usecase"
 )
 
 func TestUserUsecase_Create_AlreadyExists(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -38,11 +43,12 @@ func TestUserUsecase_Create_AlreadyExists(t *testing.T) {
 
 	token, err := uc.Create(newUser, context.Background())
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, models.Token(""), token)
 }
 
 func TestUserUsecase_Create_TokenGenerationFails(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -72,6 +78,6 @@ func TestUserUsecase_Create_TokenGenerationFails(t *testing.T) {
 		Return(models.Token(""), myerrors.NewDomainError(myerrors.RepositoryError, "token生成失敗"))
 	token, err := uc.Create(newUser, context.Background())
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, models.Token(""), token)
 }

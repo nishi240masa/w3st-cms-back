@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gorm.io/gorm"
+
 	"w3st/domain/models"
 	"w3st/domain/repositories"
 	myerrors "w3st/errors"
+
+	"gorm.io/gorm"
 )
 
 type UserRepositoryImpl struct {
@@ -43,9 +45,7 @@ func (r *UserRepositoryImpl) FindByEmail(ctx context.Context, email string) (*mo
 		// その他のエラー
 		fmt.Println("その他のエラー:", result.Error)
 		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error.Error())
-
 	}
 
 	return &user, nil
-
 }

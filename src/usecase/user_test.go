@@ -2,19 +2,21 @@ package usecase_test
 
 import (
 	"context"
-	"log"
 	"testing"
+
+	"w3st/domain/models"
+	"w3st/usecase"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"w3st/domain/models"
+
 	myerrors "w3st/errors"
 	mockRepositories "w3st/mock/repositories"
 	mockServices "w3st/mock/services"
-	"w3st/usecase"
 )
 
 func TestUserUsecase_Create_Success(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -54,12 +56,12 @@ func TestUserUsecase_Create_Success(t *testing.T) {
 
 	// テスト実行
 	token, err := uc.Create(newUser, context.Background())
-	//errの型を確認
+	// errの型を確認
 	if err != nil {
-		log.Fatalf("Create() failed: %+v", err)
+		t.Fatalf("Create() failed: %+v", err)
 	}
 
 	// 検証
-	assert.NoError(t, err)
+
 	assert.Equal(t, models.Token("mocked-token"), token)
 }

@@ -3,6 +3,7 @@ package usecase
 import (
 	"context" // context をインポート
 	"errors"
+
 	"w3st/domain/models"
 	"w3st/domain/repositories"
 	myerrors "w3st/errors"
@@ -59,7 +60,6 @@ func (u *userUsecase) Create(newUser *models.Users, ctx context.Context) (models
 		// ユーザーが見つかった場合はエラーを返す
 		return myerrors.NewDomainError(myerrors.AlreadyExist, "このメールアドレスは既に登録されています")
 	})
-
 	if err != nil {
 		// トランザクション内でエラーが発生した場合
 		var domainErr *myerrors.DomainError

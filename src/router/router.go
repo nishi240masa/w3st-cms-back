@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"time"
+
 	"w3st/factory"
 	"w3st/infra"
 
@@ -12,7 +13,6 @@ import (
 )
 
 func Init() {
-
 	// 環境変数 PORT を取得
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -35,11 +35,9 @@ func Init() {
 
 	// connectionTest
 	r.GET("/", func(c *gin.Context) {
-
 		c.JSON(200, gin.H{
 			"message": "connection success!!!!",
 		})
-
 	})
 
 	// ユーザー

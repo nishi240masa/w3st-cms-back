@@ -3,6 +3,7 @@ package infrastructure
 import (
 	"context"
 	"fmt"
+
 	"w3st/domain/repositories"
 	"w3st/errors"
 
@@ -22,15 +23,13 @@ type contextKey string
 const txKey contextKey = "tx"
 
 func (t *TransactionRepositoryImpl) Do(ctx context.Context, f func(ctx context.Context) error) error {
-
 	// すでにトランザクションが開始されている時はそれを使用する
 	if existingTx := ctx.Value(txKey); existingTx != nil {
 		return f(ctx)
 	}
 
 	// この関数は、トランザクションを開始し、f関数を実行します。
-	return t.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-
+	err := t.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		//　トランザクション内でpanicが発生した場合、ロールバックを行う
 		defer func() {
 			if r := recover(); r != nil {
@@ -53,9 +52,15 @@ func (t *TransactionRepositoryImpl) Do(ctx context.Context, f func(ctx context.C
 				return errors.NewDomainError(errors.TransactionError, "トランザクションのロールバックに失敗しました: "+rollbackErr.Error())
 			}
 			// ロールバックに成功した場合、エラーメッセージを返す
-			return err // f関数からのエラーを返す
+			return errors.NewDomainError(errors.TransactionError, "トランザクション中にエラーが発生しました: "+err.Error())
 		}
 		// エラーが発生しなかった場合、トランザクションをコミット
 		return nil
 	})
+	if err != nil {
+		// トランザクションのコミットに失敗した場合、エラーメッセージを返す
+		return errors.NewDomainError(errors.TransactionError, "トランザクションのコミットに失敗しました: "+err.Error())
+	}
+	// トランザクションのコミットに成功した場合、nilを返す
+	return nil
 }

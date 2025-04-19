@@ -1,15 +1,17 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+
 	"w3st/domain/models"
 	"w3st/dto"
 	myerrors "w3st/errors"
 	"w3st/interfaces/services"
 	"w3st/presenter"
 	"w3st/usecase"
-
-	"github.com/gin-gonic/gin"
 )
 
 type UserController struct {
@@ -44,8 +46,8 @@ func (c *UserController) Signup(ctx *gin.Context) {
 	// ユーザー登録
 	token, err := c.userUsecase.Create(newUser, ctx.Request.Context())
 	if err != nil {
-		if domainErr, ok := err.(*myerrors.DomainError); ok {
-
+		domainErr := &myerrors.DomainError{}
+		if errors.As(err, &domainErr) {
 			err := ErrorHandle(domainErr)
 			ctx.JSON(HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
 			return
@@ -71,7 +73,8 @@ func (c *UserController) Login(ctx *gin.Context) {
 	// ログイン
 	token, err := c.userUsecase.FindByEmail(input.Email)
 	if err != nil {
-		if domainErr, ok := err.(*myerrors.DomainError); ok {
+		domainErr := &myerrors.DomainError{}
+		if errors.As(err, &domainErr) {
 			err := ErrorHandle(domainErr)
 			ctx.JSON(HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
 			return
@@ -82,5 +85,4 @@ func (c *UserController) Login(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"token": token})
-
 }

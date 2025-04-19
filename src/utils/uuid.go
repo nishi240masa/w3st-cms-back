@@ -1,23 +1,29 @@
 package utils
 
-import "github.com/google/uuid"
+import (
+	"w3st/errors"
 
+	"github.com/google/uuid"
+)
 
 func StringToUUID(s string) (uuid.UUID, error) {
-	return uuid.Parse(s)
+	id, err := uuid.Parse(s)
+	if err != nil {
+		return uuid.Nil, errors.NewDomainError(errors.InvalidParameter, "invalid uuid")
+	}
+	return id, nil
 }
 
-func UuidToString(id uuid.UUID) (string) {
+func UuidToString(id uuid.UUID) string {
 	return id.String()
 }
 
 func UuidToUint(id uuid.UUID) (uint, error) {
-    
-    var uintID uint
+	var uintID uint
 
 	for i := 0; i < len(id); i++ {
 		uintID += uint(id[i])
 	}
 
-    return uintID, nil
+	return uintID, nil
 }

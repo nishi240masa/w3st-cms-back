@@ -3,16 +3,16 @@ package services
 import (
 	"os"
 	"time"
+
 	"w3st/domain/models"
 	"w3st/errors"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-
 type AuthService interface {
-    GenerateToken(userID string) (models.Token,  *errors.DomainError)
-    ValidateToken(token string) (string, error)
+	GenerateToken(userID string) (models.Token, *errors.DomainError)
+	ValidateToken(token string) (string, error)
 }
 
 type authService struct {
@@ -26,17 +26,17 @@ func NewAuthService() AuthService {
 }
 
 // tokenの生成
-func (a *authService) GenerateToken(userID string) (models.Token,  *errors.DomainError) {
+func (a *authService) GenerateToken(userID string) (models.Token, *errors.DomainError) {
 	claims := jwt.MapClaims{
 		"sub": userID,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+		"exp": time.Now().Add(time.Hour * 24).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	
+
 	// トークンの署名
 	signedToken, err := token.SignedString([]byte(a.secretKey))
 	if err != nil {
-		return "",  errors.NewDomainError(errors.ErrorUnknown, "トークンの生成に失敗しました")
+		return "", errors.NewDomainError(errors.ErrorUnknown, "トークンの生成に失敗しました")
 	}
 	return models.Token(signedToken), nil
 }
@@ -50,9 +50,9 @@ func (a *authService) ValidateToken(token string) (string, error) {
 		}
 		return []byte(a.secretKey), nil
 	})
-
+	// jwt.Parseのエラー処理
 	if err != nil {
-		return "", err
+		return "", errors.NewDomainError(errors.ErrorUnknown, "perseTokenが失敗しました")
 	}
 
 	if !parsedToken.Valid {

@@ -37,7 +37,6 @@ func (e *DomainError) Unwrap() error {
 }
 
 func (e *DomainError) Is(target error) bool {
-
 	if e == nil || target == nil {
 		return false
 	}
