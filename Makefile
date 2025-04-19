@@ -1,6 +1,6 @@
 include .env
 
-
+# コンテナ操作
 up: build
 	docker-compose up -d
 
@@ -16,25 +16,19 @@ go:
 db:
 	docker exec -it ${DB_HOST} psql -U ${DB_USER} -d ${DB_NAME}
 
+# ---------- Mock 生成 ----------
+MOCKGEN = mockgen
+SRC_DIR = domain
+SRC_INTERFACE = interfaces
+MOCK_DIR = mock
+REPO_PKG = repositories
+SERVICE_PKG = services
 
-#moke作成
-
-# 変数定義
-MOCKGEN=mockgen
-SRC_DIR=domain
-SRC_INTERFACE=interfaces
-MOCK_DIR=mock
-REPO_PKG=repositories
-SERVICE_PKG=services
-
-# 汎用的なモック生成ルール
-# Usage: make mockgen SRC=xxx.go DST=yyy.go PKG=zzz
 mockgen:
 	$(MOCKGEN) -source=src/$(SRC) -destination=src/$(MOCK_DIR)/$(DST) -package=$(PKG)
 
-# 便利なターゲット（よく使うものをここで一括指定）
 mock-user:
-	$(MOCKGEN) -source=src/$(SRC_DIR)/$(REPO_PKG)/users.go -destination=$src/(MOCK_DIR)/$(REPO_PKG)/mock_user_repository.go -package=mock_repositories
+	$(MOCKGEN) -source=src/$(SRC_DIR)/$(REPO_PKG)/users.go -destination=src/$(MOCK_DIR)/$(REPO_PKG)/mock_user_repository.go -package=mock_repositories
 
 mock-auth:
 	$(MOCKGEN) -source=src/$(SRC_INTERFACE)/$(SERVICE_PKG)/auth.go -destination=src/$(MOCK_DIR)/$(SERVICE_PKG)/mock_auth_service.go -package=mock_services
@@ -42,10 +36,26 @@ mock-auth:
 mock-tx:
 	$(MOCKGEN) -source=src/$(SRC_DIR)/$(REPO_PKG)/transaction.go -destination=src/$(MOCK_DIR)/$(REPO_PKG)/mock_transaction_repository.go -package=mock_repositories
 
-# まとめて実行
 mock-all: mock-user mock-auth mock-tx
 
+# ---------- Format / Lint ----------
+GOFMT = gofmt
+GOFUMPT = gofumpt
+GOIMPORTS = goimports
+GOLANGCI_LINT = golangci-lint
+GOFILES := $(shell find src -name '*.go' -not -path "./vendor/*")
 
-.PHONY: lint
+.PHONY: fmt lint fmt-lint
+
+fmt:
+	@echo "Running gofumpt..."
+	$(GOFUMPT) -w $(GOFILES)
+	@echo "Running goimports..."
+	$(GOIMPORTS) -w $(GOFILES)
+	@echo "Running gofmt..."
+	$(GOFMT) -s -w $(GOFILES)
+
 lint:
-	cd src && golangci-lint run ./... --timeout 5m
+	cd src && $(GOLANGCI_LINT) run ./... --timeout 5m
+
+fmt-lint: fmt lint
