@@ -11,6 +11,7 @@ import (
 	errors "w3st/errors"
 
 	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
 )
 
 // MockAuthService is a mock of AuthService interface.
@@ -37,7 +38,7 @@ func (m *MockAuthService) EXPECT() *MockAuthServiceMockRecorder {
 }
 
 // GenerateToken mocks base method.
-func (m *MockAuthService) GenerateToken(userID string) (models.Token, *errors.DomainError) {
+func (m *MockAuthService) GenerateToken(userID uuid.UUID) (models.Token, *errors.DomainError) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateToken", userID)
 	ret0, _ := ret[0].(models.Token)
