@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"w3st/domain/models"
 	"w3st/usecase"
 
@@ -77,6 +79,60 @@ func TestUserUsecase_Create_TokenGenerationFails(t *testing.T) {
 	mockAuthService.EXPECT().GenerateToken(gomock.Any()).
 		Return(models.Token(""), myerrors.NewDomainError(myerrors.RepositoryError, "token生成失敗"))
 	token, err := uc.Create(newUser, context.Background())
+
+	require.Error(t, err)
+	assert.Equal(t, models.Token(""), token)
+}
+
+func TestUserUsecase_FindByEmail_RepoFails(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
+	mockAuthService := mockServices.NewMockAuthService(ctrl)
+	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
+
+	uc := usecase.NewUserUsecase(mockUserRepo, mockAuthService, mockTx)
+
+	email := "notfound@example.com"
+
+	mockUserRepo.EXPECT().
+		FindByEmail(gomock.Any(), email).
+		Return(nil, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, "not found"))
+
+	token, err := uc.FindByEmail(email)
+
+	require.Error(t, err)
+	assert.Equal(t, models.Token(""), token)
+}
+
+func TestUserUsecase_FindByEmail_TokenGenerationFails(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
+	mockAuthService := mockServices.NewMockAuthService(ctrl)
+	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
+
+	uc := usecase.NewUserUsecase(mockUserRepo, mockAuthService, mockTx)
+
+	email := "failtoken@example.com"
+	userID := uuid.New()
+	mockUser := &models.Users{
+		ID: userID,
+	}
+
+	mockUserRepo.EXPECT().
+		FindByEmail(gomock.Any(), email).
+		Return(mockUser, nil)
+
+	mockAuthService.EXPECT().
+		GenerateToken(userID.String()).
+		Return(models.Token(""), myerrors.NewDomainError(myerrors.RepositoryError, "token生成失敗"))
+
+	token, err := uc.FindByEmail(email)
 
 	require.Error(t, err)
 	assert.Equal(t, models.Token(""), token)

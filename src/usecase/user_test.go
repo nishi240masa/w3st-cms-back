@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"w3st/domain/models"
 	"w3st/usecase"
 
@@ -64,4 +66,37 @@ func TestUserUsecase_Create_Success(t *testing.T) {
 	// 検証
 
 	assert.Equal(t, models.Token("mocked-token"), token)
+}
+
+func TestUserUsecase_FindByEmail_Success(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
+	mockAuthService := mockServices.NewMockAuthService(ctrl)
+	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
+
+	uc := usecase.NewUserUsecase(mockUserRepo, mockAuthService, mockTx)
+
+	email := "success@example.com"
+	userID := uuid.New()
+	mockUser := &models.Users{
+		ID: userID,
+	}
+
+	mockUserRepo.EXPECT().
+		FindByEmail(gomock.Any(), email).
+		Return(mockUser, nil)
+
+	mockAuthService.EXPECT().
+		GenerateToken(gomock.Any()).
+		Return(models.Token("mock-token"), nil)
+
+	token, err := uc.FindByEmail(email)
+	if err != nil {
+		t.Fatalf("FindByEmail() failed: %+v", err)
+	}
+	// 検証
+	assert.Equal(t, models.Token("mock-token"), token)
 }
