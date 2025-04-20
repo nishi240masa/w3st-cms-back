@@ -107,6 +107,26 @@ func TestUserUsecase_FindByEmail_RepoFails(t *testing.T) {
 	assert.Equal(t, models.Token(""), token)
 }
 
+func TestUserUsecase_FindByEmail_QueryError(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
+
+	uc := usecase.NewUserUsecase(mockUserRepo, nil, nil)
+
+	email := "queryfail@example.com"
+
+	mockUserRepo.EXPECT().
+		FindByEmail(gomock.Any(), email).
+		Return(nil, myerrors.NewDomainError(myerrors.QueryError, "DB error"))
+
+	token, err := uc.FindByEmail(email)
+	require.Error(t, err)
+	assert.Equal(t, models.Token(""), token)
+}
+
 func TestUserUsecase_FindByEmail_TokenGenerationFails(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
