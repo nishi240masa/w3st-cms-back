@@ -297,8 +297,6 @@ components:
       properties:
         token:
           type: string
-        user:
-          $ref: "#/components/schemas/UserGetResponse"
 
     UserGetResponse:
       type: object
