@@ -149,7 +149,7 @@ func TestUserUsecase_FindByEmail_TokenGenerationFails(t *testing.T) {
 		Return(mockUser, nil)
 
 	mockAuthService.EXPECT().
-		GenerateToken(userID.String()).
+		GenerateToken(userID).
 		Return(models.Token(""), myerrors.NewDomainError(myerrors.RepositoryError, "token生成失敗"))
 
 	token, err := uc.FindByEmail(email)
