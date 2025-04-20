@@ -42,6 +42,7 @@ jobs:
 
       - name: Goのテスト実行&カバレッジ取得
         run: go test ./... -v -coverprofile=coverage.out
+        working-directory: ./src
 
       - name: カバレッジのHTMLレポートを生成
         run: go tool cover -html=coverage.out -o coverage.html
