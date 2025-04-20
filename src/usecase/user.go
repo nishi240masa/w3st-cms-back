@@ -45,7 +45,6 @@ func (u *userUsecase) Create(newUser *models.Users, ctx context.Context) (models
 			}
 
 			// token生成
-			//stringID := utils.UuidToString(newUser.ID)
 			token, err := u.authService.GenerateToken(newUser.ID)
 			if err != nil {
 				return err
