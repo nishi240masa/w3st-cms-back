@@ -1,5 +1,5 @@
 # Goの公式イメージを使用
-FROM golang:1.23-alpine
+FROM golang:1.24.2-alpine
 
 # 必要なツールをインストール
 RUN apk update && apk add --no-cache git
