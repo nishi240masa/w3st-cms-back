@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/google/uuid"
 	"os"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 )
 
 type AuthService interface {
-	GenerateToken(userID string) (models.Token, *errors.DomainError)
+	GenerateToken(userID uuid.UUID) (models.Token, *errors.DomainError)
 	ValidateToken(token string) (string, error)
 }
 
@@ -26,7 +27,8 @@ func NewAuthService() AuthService {
 }
 
 // tokenの生成
-func (a *authService) GenerateToken(userID string) (models.Token, *errors.DomainError) {
+func (a *authService) GenerateToken(userID uuid.UUID) (models.Token, *errors.DomainError) {
+
 	claims := jwt.MapClaims{
 		"sub": userID,
 		"exp": time.Now().Add(time.Hour * 24).Unix(),

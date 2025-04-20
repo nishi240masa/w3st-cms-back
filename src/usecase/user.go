@@ -8,7 +8,6 @@ import (
 	"w3st/domain/repositories"
 	myerrors "w3st/errors"
 	"w3st/interfaces/services"
-	"w3st/utils"
 )
 
 type UserUsecase interface {
@@ -46,8 +45,8 @@ func (u *userUsecase) Create(newUser *models.Users, ctx context.Context) (models
 			}
 
 			// token生成
-			stringID := utils.UuidToString(newUser.ID)
-			token, err := u.authService.GenerateToken(stringID)
+			//stringID := utils.UuidToString(newUser.ID)
+			token, err := u.authService.GenerateToken(newUser.ID)
 			if err != nil {
 				return err
 			}
@@ -79,7 +78,7 @@ func (u *userUsecase) FindByEmail(email string) (models.Token, error) {
 	if err != nil {
 		return "", err
 	}
-	token, err := u.authService.GenerateToken(user.ID.String())
+	token, err := u.authService.GenerateToken(user.ID)
 	if err != nil {
 		return "", err
 	}
