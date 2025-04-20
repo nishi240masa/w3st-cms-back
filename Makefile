@@ -1,4 +1,4 @@
-include .env
+-include .env
 
 # コンテナ操作
 up: build
