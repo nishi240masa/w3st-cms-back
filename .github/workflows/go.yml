@@ -31,6 +31,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Goの依存関係をインストール
+        run: go install github.com/golang/mock/mockgen@v1.6.0
+
+      - name: Generate mocks
+        run: make mock
+
+      - name: Check mock diffs
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Mocks were not up-to-date. Please run 'make mock' and commit the changes."
+            git diff
+            exit 1
+          fi
 
       - name: Lint
         uses: golangci/golangci-lint-action@v7
@@ -45,27 +58,18 @@ jobs:
         working-directory: ./src
 
       - name: カバレッジのHTMLレポートを生成
-        run: go tool cover -html=coverage.out -o coverage.html
+        if: success()
+        run: |
+          if [ -f coverage.out ]; then
+            go tool cover -html=coverage.out -o coverage.html
+          fi
+        working-directory: ./src
 
       - name: カバレッジのHTMLレポートをアップロード
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage.html
-
-      - name: Goの依存関係をインストール
-        run: go install github.com/golang/mock/mockgen@v1.6.0
-
-      - name: Generate mocks
-        run: make mock
-
-      - name: mockgenの差分確認
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "Mocks were not up-to-date. Please run 'make mock' and commit the changes."
-            git diff
-            exit 1
-          fi
 
       - name: mockgenの差分を自動コミット
         uses: stefanzweifel/git-auto-commit-action@v5
