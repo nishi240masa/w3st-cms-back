@@ -59,10 +59,7 @@ jobs:
 
       - name: カバレッジのHTMLレポートを生成
         if: success()
-        run: |
-          if [ -f coverage.out ]; then
-            go tool cover -html=coverage.out -o coverage.html
-          fi
+        run: go tool cover -html=coverage.out -o coverage.html
         working-directory: ./src
 
       - name: カバレッジのHTMLレポートをアップロード
