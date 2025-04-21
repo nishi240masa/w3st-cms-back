@@ -58,7 +58,7 @@ func (c *UserController) Signup(ctx *gin.Context) {
 	}
 
 	// jwtトークンをクライアントに返す
-	ctx.JSON(http.StatusOK, token)
+	ctx.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 func (c *UserController) Login(ctx *gin.Context) {
