@@ -12,6 +12,7 @@ import (
 
 type Factory interface {
 	InitUserController() *controllers.UserController
+	InitAuthService() services.AuthService
 }
 
 type factory struct {
@@ -29,4 +30,8 @@ func (f factory) InitUserController() *controllers.UserController {
 	userUsecase := usecase.NewUserUsecase(userRepo, authService, txRepo)
 	userPresenter := presenter.NewUserPresenter()
 	return controllers.NewUserController(userUsecase, authService, userPresenter)
+}
+
+func (f factory) InitAuthService() services.AuthService {
+	return services.NewAuthService()
 }

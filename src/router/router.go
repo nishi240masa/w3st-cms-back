@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	"w3st/interfaces/middlewares"
+
 	"w3st/factory"
 	"w3st/infra"
 
@@ -44,11 +46,17 @@ func Init() {
 	users := r.Group("/users")
 	userController := f.InitUserController()
 
+	// Auth
+	authService := f.InitAuthService()
+
 	// ユーザー登録
 	users.POST("/signup", userController.Signup)
 
 	// ログイン
 	users.POST("/login", userController.Login)
+
+	// ユーザー情報取得
+	users.GET("/me", middlewares.JwtAuthMiddleware(authService), userController.GetUserInfo)
 
 	// 指定されたポートでサーバーを開始
 	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {
