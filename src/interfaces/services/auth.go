@@ -4,17 +4,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
 	"w3st/domain/models"
 	"w3st/errors"
-
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type AuthService interface {
 	GenerateToken(userID uuid.UUID) (models.Token, *errors.DomainError)
-	ValidateToken(token string) (string, error)
+	ValidateToken(token string) (string, *errors.DomainError)
 }
 
 type authService struct {
@@ -22,57 +21,60 @@ type authService struct {
 }
 
 func NewAuthService() AuthService {
+	secret := os.Getenv("SECRET_KEY")
+	if len(secret) < 32 {
+		panic("SECRET_KEY must be at least 32 bytes long")
+	}
 	return &authService{
-		secretKey: os.Getenv("SECRET_KEY"),
+		secretKey: secret,
 	}
 }
 
-// tokenの生成
+// トークンを生成する
 func (a *authService) GenerateToken(userID uuid.UUID) (models.Token, *errors.DomainError) {
 	claims := jwt.MapClaims{
-		"sub": userID,
-		"exp": time.Now().Add(time.Hour * 24).Unix(),
+		"sub": userID.String(),
+		"exp": time.Now().Add(24 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	// トークンの署名
 	signedToken, err := token.SignedString([]byte(a.secretKey))
 	if err != nil {
 		return "", errors.NewDomainError(errors.ErrorUnknown, "トークンの生成に失敗しました")
 	}
+
 	return models.Token(signedToken), nil
 }
 
-// tokenの検証
-func (a *authService) ValidateToken(token string) (string, error) {
+// トークンを検証し、userIDを取得する
+func (a *authService) ValidateToken(token string) (string, *errors.DomainError) {
 	parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			// 署名方法がHS256でない場合
-			return nil, errors.NewDomainError(errors.ErrorUnknown, "invalid signing method")
+			return nil, errors.NewDomainError(errors.ErrorUnknown, "署名方式が不正です")
 		}
 		return []byte(a.secretKey), nil
 	})
-	// jwt.Parseのエラー処理
 	if err != nil {
-		return "", errors.NewDomainError(errors.ErrorUnknown, "perseTokenが失敗しました")
+		return "", errors.NewDomainError(errors.ErrorUnknown, "トークンのパースに失敗しました")
 	}
 
 	if !parsedToken.Valid {
-		// トークンが無効な場合
-		return "", errors.NewDomainError(errors.ErrorUnknown, "invalid token")
+		return "", errors.NewDomainError(errors.ErrorUnknown, "無効なトークンです")
 	}
 
 	claims, ok := parsedToken.Claims.(jwt.MapClaims)
-	if !ok || claims["user_id"] == nil {
-		// claimsが無効な場合
-		return "", errors.NewDomainError(errors.ErrorUnknown, "invalid claims")
+	if !ok || claims["sub"] == nil {
+		return "", errors.NewDomainError(errors.ErrorUnknown, "claimsの取得に失敗しました")
 	}
 
-	userID, ok := claims["user_id"].(string)
+	subStr, ok := claims["sub"].(string)
 	if !ok {
-		// user_idがstring型でない場合
-		return "", errors.NewDomainError(errors.ErrorUnknown, "invalid user_id")
+		return "", errors.NewDomainError(errors.ErrorUnknown, "subの型が不正です")
 	}
 
-	return userID, nil
+	if _, err := uuid.Parse(subStr); err != nil {
+		return "", errors.NewDomainError(errors.ErrorUnknown, "UUIDのパースに失敗しました")
+	}
+
+	return subStr, nil
 }

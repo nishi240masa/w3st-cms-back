@@ -49,3 +49,21 @@ func (r *UserRepositoryImpl) FindByEmail(ctx context.Context, email string) (*mo
 
 	return &user, nil
 }
+
+// FindByID
+func (r *UserRepositoryImpl) FindByID(ctx context.Context, userID string) (*models.Users, *myerrors.DomainError) {
+	var user models.Users
+	result := r.db.WithContext(ctx).Where("id = ?", userID).First(&user)
+
+	// エラーが発生した場合
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return &user, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, "ユーザーが見つかりません")
+		}
+		// その他のエラー
+		fmt.Println("その他のエラー:", result.Error)
+		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error.Error())
+	}
+
+	return &user, nil
+}

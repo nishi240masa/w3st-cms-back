@@ -13,6 +13,7 @@ import (
 type UserUsecase interface {
 	Create(newUser *models.Users, ctx context.Context) (models.Token, error)
 	FindByEmail(email string) (models.Token, error)
+	FindByID(userID string) (*models.Users, error)
 }
 
 type userUsecase struct {
@@ -82,4 +83,12 @@ func (u *userUsecase) FindByEmail(email string) (models.Token, error) {
 		return "", err
 	}
 	return token, nil
+}
+
+func (u *userUsecase) FindByID(userID string) (*models.Users, error) {
+	user, err := u.userRepo.FindByID(context.Background(), userID)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
