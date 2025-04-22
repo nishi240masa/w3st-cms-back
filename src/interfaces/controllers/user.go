@@ -86,3 +86,32 @@ func (c *UserController) Login(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"token": token})
 }
+
+func (c *UserController) GetUserInfo(ctx *gin.Context) {
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// ユーザー情報の取得
+	// userIDはstring型であることを確認
+	userIDStr, ok := userID.(string)
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	user, err := c.userUsecase.FindByID(userIDStr)
+	if err != nil {
+		domainErr := &myerrors.DomainError{}
+		if errors.As(err, &domainErr) {
+			err := ErrorHandle(domainErr)
+			ctx.JSON(HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"user": user})
+}
