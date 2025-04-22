@@ -69,7 +69,7 @@ func (a *authService) ValidateToken(token string) (string, *errors.DomainError) 
 
 	subStr, ok := claims["sub"].(string)
 	if !ok {
-		return "", errors.NewDomainError(errors.ErrorUnknown, "user_idの型が不正です")
+		return "", errors.NewDomainError(errors.ErrorUnknown, "subの型が不正です")
 	}
 
 	if _, err := uuid.Parse(subStr); err != nil {
