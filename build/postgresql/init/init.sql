@@ -169,7 +169,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 各テーブルにトリガーを設定
-CREATE TRIGGER set_timestam_users
+CREATE TRIGGER set_timestamp_users
 BEFORE UPDATE ON users
 FOR EACH ROW
 EXECUTE FUNCTION update_timestamp();
