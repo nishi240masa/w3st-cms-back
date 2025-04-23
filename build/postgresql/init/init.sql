@@ -60,6 +60,25 @@ CREATE TABLE IF NOT EXISTS api_kind_relation (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE api_keys (
+    id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(100),                              -- 任意の名前（管理用）
+    key VARCHAR(255) UNIQUE NOT NULL,               -- 発行されたAPIキー文字列
+    ip_whitelist TEXT[],                            -- 許可されたIPアドレス（空配列は無制限）
+    expire_at TIMESTAMP,                            -- 有効期限（NULLなら無期限）
+    revoked BOOLEAN DEFAULT FALSE,                  -- 無効化フラグ
+    rate_limit_per_hour INT DEFAULT 1000,           -- 1時間あたりの最大リクエスト数
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE api_key_collections (
+    api_key_id INT NOT NULL REFERENCES api_keys(id) ON DELETE CASCADE,
+    collection_id INT NOT NULL REFERENCES api_collections(id) ON DELETE CASCADE,
+    PRIMARY KEY (api_key_id, collection_id)
+);
+
+
 -- スキマーの削除時に関連データを削除するトリガー関数
 CREATE OR REPLACE FUNCTION cascade_delete_apiSchema()
 RETURNS TRIGGER AS $$
