@@ -3,7 +3,6 @@ package factory
 import (
 	infrastructure "w3st/infra/repository"
 	"w3st/interfaces/controllers"
-	"w3st/interfaces/services"
 	"w3st/presenter"
 	"w3st/usecase"
 
@@ -12,7 +11,7 @@ import (
 
 type Factory interface {
 	InitUserController() *controllers.UserController
-	InitAuthService() services.AuthService
+	InitAuthUsecase() usecase.JwtUsecase
 }
 
 type factory struct {
@@ -25,13 +24,14 @@ func NewFactory(db *gorm.DB) Factory {
 
 func (f factory) InitUserController() *controllers.UserController {
 	userRepo := infrastructure.NewUserRepositoryImpl(f.DB)
-	authService := services.NewAuthService()
 	txRepo := infrastructure.NewTransactionRepositoryImpl(f.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo, authService, txRepo)
+	userUsecase := usecase.NewUserUsecase(userRepo, txRepo)
+	jwtAuthUsecase := usecase.NewjwtAuthUsecase()
 	userPresenter := presenter.NewUserPresenter()
-	return controllers.NewUserController(userUsecase, authService, userPresenter)
+
+	return controllers.NewUserController(userUsecase, jwtAuthUsecase, userPresenter)
 }
 
-func (f factory) InitAuthService() services.AuthService {
-	return services.NewAuthService()
+func (f factory) InitAuthUsecase() usecase.JwtUsecase {
+	return usecase.NewjwtAuthUsecase()
 }

@@ -25,10 +25,9 @@ func TestUserUsecase_Create_AlreadyExists(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
-	mockAuthService := mockServices.NewMockAuthService(ctrl)
 	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
 
-	uc := usecase.NewUserUsecase(mockUserRepo, mockAuthService, mockTx)
+	uc := usecase.NewUserUsecase(mockUserRepo, mockTx)
 
 	newUser := &models.Users{
 		Name:     "Existing User",
@@ -58,7 +57,7 @@ func TestUserUsecase_Create_TokenGenerationFails(t *testing.T) {
 	mockAuthService := mockServices.NewMockAuthService(ctrl)
 	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
 
-	uc := usecase.NewUserUsecase(mockUserRepo, mockAuthService, mockTx)
+	uc := usecase.NewUserUsecase(mockUserRepo, mockTx)
 
 	newUser := &models.Users{
 		Name:     "Token Error",
@@ -90,10 +89,9 @@ func TestUserUsecase_FindByEmail_RepoFails(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
-	mockAuthService := mockServices.NewMockAuthService(ctrl)
 	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
 
-	uc := usecase.NewUserUsecase(mockUserRepo, mockAuthService, mockTx)
+	uc := usecase.NewUserUsecase(mockUserRepo, mockTx)
 
 	email := "notfound@example.com"
 
@@ -114,7 +112,7 @@ func TestUserUsecase_FindByEmail_QueryError(t *testing.T) {
 
 	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
 
-	uc := usecase.NewUserUsecase(mockUserRepo, nil, nil)
+	uc := usecase.NewUserUsecase(mockUserRepo, nil)
 
 	email := "queryfail@example.com"
 
@@ -136,7 +134,7 @@ func TestUserUsecase_FindByEmail_TokenGenerationFails(t *testing.T) {
 	mockAuthService := mockServices.NewMockAuthService(ctrl)
 	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
 
-	uc := usecase.NewUserUsecase(mockUserRepo, mockAuthService, mockTx)
+	uc := usecase.NewUserUsecase(mockUserRepo, mockTx)
 
 	email := "failtoken@example.com"
 	userID := uuid.New()

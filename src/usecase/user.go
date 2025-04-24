@@ -7,7 +7,6 @@ import (
 	"w3st/domain/models"
 	"w3st/domain/repositories"
 	myerrors "w3st/errors"
-	"w3st/interfaces/services"
 )
 
 type UserUsecase interface {
@@ -17,16 +16,14 @@ type UserUsecase interface {
 }
 
 type userUsecase struct {
-	userRepo    repositories.UserRepository
-	authService services.AuthService
-	tx          repositories.TransactionRepository
+	userRepo repositories.UserRepository
+	tx       repositories.TransactionRepository
 }
 
-func NewUserUsecase(userRepo repositories.UserRepository, authService services.AuthService, txRepo repositories.TransactionRepository) UserUsecase {
+func NewUserUsecase(userRepo repositories.UserRepository, txRepo repositories.TransactionRepository) UserUsecase {
 	return &userUsecase{
-		userRepo:    userRepo,
-		authService: authService,
-		tx:          txRepo,
+		userRepo: userRepo,
+		tx:       txRepo,
 	}
 }
 

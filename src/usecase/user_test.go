@@ -26,7 +26,7 @@ func TestUserUsecase_Create_Success(t *testing.T) {
 	mockAuthService := mockServices.NewMockAuthService(ctrl)
 	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
 
-	uc := usecase.NewUserUsecase(mockUserRepo, mockAuthService, mockTx)
+	uc := usecase.NewUserUsecase(mockUserRepo, mockTx)
 
 	newUser := &models.Users{
 		Name:     "Test User",
@@ -77,7 +77,7 @@ func TestUserUsecase_FindByEmail_Success(t *testing.T) {
 	mockAuthService := mockServices.NewMockAuthService(ctrl)
 	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
 
-	uc := usecase.NewUserUsecase(mockUserRepo, mockAuthService, mockTx)
+	uc := usecase.NewUserUsecase(mockUserRepo, mockTx)
 
 	email := "success@example.com"
 	userID := uuid.New()

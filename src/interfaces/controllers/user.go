@@ -9,22 +9,21 @@ import (
 	"w3st/domain/models"
 	"w3st/dto"
 	myerrors "w3st/errors"
-	"w3st/interfaces/services"
 	"w3st/presenter"
 	"w3st/usecase"
 )
 
 type UserController struct {
-	userUsecase   usecase.UserUsecase
-	authService   services.AuthService
-	userPresenter presenter.UserPresenter
+	userUsecase    usecase.UserUsecase
+	jwtAuthUsecase usecase.JwtUsecase
+	userPresenter  presenter.UserPresenter
 }
 
-func NewUserController(userUsecase usecase.UserUsecase, authService services.AuthService, userPresenter presenter.UserPresenter) *UserController {
+func NewUserController(userUsecase usecase.UserUsecase, jwtAuthUsecase usecase.JwtUsecase, userPresenter presenter.UserPresenter) *UserController {
 	return &UserController{
-		userUsecase:   userUsecase,
-		authService:   authService,
-		userPresenter: userPresenter,
+		userUsecase:    userUsecase,
+		jwtAuthUsecase: jwtAuthUsecase,
+		userPresenter:  userPresenter,
 	}
 }
 
@@ -56,7 +55,7 @@ func (c *UserController) Signup(ctx *gin.Context) {
 	}
 
 	// トークン生成
-	token, err := c.authService.GenerateToken(newUser.ID)
+	token, err := c.jwtAuthUsecase.GenerateToken(newUser.ID)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {
@@ -92,7 +91,7 @@ func (c *UserController) Login(ctx *gin.Context) {
 		return
 	}
 	//	token生成
-	token, err := c.authService.GenerateToken(user.ID)
+	token, err := c.jwtAuthUsecase.GenerateToken(user.ID)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {

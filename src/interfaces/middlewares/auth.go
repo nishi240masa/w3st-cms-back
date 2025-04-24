@@ -5,15 +5,15 @@ import (
 	"net/http"
 	"strings"
 
+	"w3st/usecase"
+
 	myerrors "w3st/errors"
 	"w3st/interfaces/controllers"
 
 	"github.com/gin-gonic/gin"
-
-	"w3st/interfaces/services"
 )
 
-func JwtAuthMiddleware(authService services.AuthService) gin.HandlerFunc {
+func JwtAuthMiddleware(authUsecase usecase.JwtUsecase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// tokenをヘッダーから取得
 		authHeader := c.Request.Header.Get("Authorization")
@@ -27,7 +27,7 @@ func JwtAuthMiddleware(authService services.AuthService) gin.HandlerFunc {
 		}
 
 		//　tokenの検証
-		userID, err := authService.ValidateToken(token)
+		userID, err := authUsecase.ValidateToken(token)
 		if err != nil {
 			domainErr := &myerrors.DomainError{}
 			if errors.As(err, &domainErr) {

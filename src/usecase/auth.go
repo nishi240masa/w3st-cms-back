@@ -1,4 +1,4 @@
-package services
+package usecase
 
 import (
 	"os"
@@ -11,27 +11,27 @@ import (
 	"w3st/errors"
 )
 
-type AuthService interface {
+type JwtUsecase interface {
 	GenerateToken(userID uuid.UUID) (models.Token, error)
-	ValidateToken(token string) (string, *errors.DomainError)
+	ValidateToken(token string) (string, error)
 }
 
-type authService struct {
+type jwtAuthUsecase struct {
 	secretKey string
 }
 
-func NewAuthService() AuthService {
+func NewjwtAuthUsecase() JwtUsecase {
 	secret := os.Getenv("SECRET_KEY")
 	if len(secret) < 32 {
 		panic("SECRET_KEY must be at least 32 bytes long")
 	}
-	return &authService{
+	return &jwtAuthUsecase{
 		secretKey: secret,
 	}
 }
 
 // トークンを生成する
-func (a *authService) GenerateToken(userID uuid.UUID) (models.Token, error) {
+func (a *jwtAuthUsecase) GenerateToken(userID uuid.UUID) (models.Token, error) {
 	claims := jwt.MapClaims{
 		"sub": userID.String(),
 		"exp": time.Now().Add(24 * time.Hour).Unix(),
@@ -47,7 +47,7 @@ func (a *authService) GenerateToken(userID uuid.UUID) (models.Token, error) {
 }
 
 // トークンを検証し、userIDを取得する
-func (a *authService) ValidateToken(token string) (string, *errors.DomainError) {
+func (a *jwtAuthUsecase) ValidateToken(token string) (string, error) {
 	parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.NewDomainError(errors.ErrorUnknown, "署名方式が不正です")

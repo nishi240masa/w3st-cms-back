@@ -47,7 +47,7 @@ func Init() {
 	userController := f.InitUserController()
 
 	// Auth
-	authService := f.InitAuthService()
+	authUsecase := f.InitAuthUsecase()
 
 	// ユーザー登録
 	users.POST("/signup", userController.Signup)
@@ -56,7 +56,7 @@ func Init() {
 	users.POST("/login", userController.Login)
 
 	// ユーザー情報取得
-	users.GET("/me", middlewares.JwtAuthMiddleware(authService), userController.GetUserInfo)
+	users.GET("/me", middlewares.JwtAuthMiddleware(authUsecase), userController.GetUserInfo)
 
 	// 指定されたポートでサーバーを開始
 	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {

@@ -1,37 +1,38 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
-	"w3st/errors"
+	myerrors "w3st/errors"
 	"w3st/infra/logger"
 
 	"github.com/bufbuild/connect-go"
 )
 
-func ErrorHandle(domainErr *errors.DomainError) *connect.Error {
+func ErrorHandle(domainErr *myerrors.DomainError) *connect.Error {
 	switch domainErr.ErrType {
 	// 技術的なエラー
-	case errors.InvalidParameter:
+	case myerrors.InvalidParameter:
 		return connect.NewError(connect.CodeInvalidArgument, domainErr)
 		// ビジネスロジックエラー
-	case errors.UnPemitedOperation:
+	case myerrors.UnPemitedOperation:
 		return connect.NewError(connect.CodePermissionDenied, domainErr)
 		// 既に存在するエラー
-	case errors.AlreadyExist:
+	case myerrors.AlreadyExist:
 		return connect.NewError(connect.CodeAlreadyExists, domainErr)
 		// リポジトリで技術的なエラーが発生した場合
-	case errors.RepositoryError, errors.QueryError:
+	case myerrors.RepositoryError, myerrors.QueryError:
 		logger.Error(domainErr.Error())
 		return connect.NewError(connect.CodeInternal, domainErr)
 		// ユーザーが見つからなかった場合
-	case errors.QueryDataNotFoundError:
+	case myerrors.QueryDataNotFoundError:
 		logger.Error(domainErr.Error())
 		return connect.NewError(connect.CodeNotFound, domainErr)
 		// トランザクションエラー
-	case errors.TransactionError:
+	case myerrors.TransactionError:
 		logger.Error(domainErr.Error())
 		return connect.NewError(connect.CodeInternal, domainErr)
 		// その他のエラー
@@ -61,7 +62,9 @@ func HttpStatusCodeFromConnectCode(code connect.Code) int {
 
 // handlerのエラーハンドリング
 func ErrorHandler(c *gin.Context, err error) {
-	if domainErr, ok := err.(*errors.DomainError); ok {
+	// エラーが connect.Error 型かどうかを確認
+	var domainErr *myerrors.DomainError
+	if errors.As(err, &domainErr) {
 		// connect.Error に変換
 		connectErr := ErrorHandle(domainErr)
 
