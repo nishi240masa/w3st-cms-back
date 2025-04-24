@@ -3,6 +3,8 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+
 	"w3st/errors"
 	"w3st/infra/logger"
 
@@ -54,5 +56,22 @@ func HttpStatusCodeFromConnectCode(code connect.Code) int {
 		return http.StatusNotFound
 	default:
 		return http.StatusInternalServerError
+	}
+}
+
+// handlerのエラーハンドリング
+func ErrorHandler(c *gin.Context, err error) {
+	if domainErr, ok := err.(*errors.DomainError); ok {
+		// connect.Error に変換
+		connectErr := ErrorHandle(domainErr)
+
+		// HTTP ステータスコードを取得
+		httpStatusCode := HttpStatusCodeFromConnectCode(connectErr.Code())
+
+		// レスポンスを返す
+		c.JSON(httpStatusCode, gin.H{"error": connectErr.Message()})
+	} else {
+		// その他のエラーは500 Internal Server Errorとして処理
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 	}
 }

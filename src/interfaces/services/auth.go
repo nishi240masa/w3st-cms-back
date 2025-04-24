@@ -12,7 +12,7 @@ import (
 )
 
 type AuthService interface {
-	GenerateToken(userID uuid.UUID) (models.Token, *errors.DomainError)
+	GenerateToken(userID uuid.UUID) (models.Token, error)
 	ValidateToken(token string) (string, *errors.DomainError)
 }
 
@@ -31,7 +31,7 @@ func NewAuthService() AuthService {
 }
 
 // トークンを生成する
-func (a *authService) GenerateToken(userID uuid.UUID) (models.Token, *errors.DomainError) {
+func (a *authService) GenerateToken(userID uuid.UUID) (models.Token, error) {
 	claims := jwt.MapClaims{
 		"sub": userID.String(),
 		"exp": time.Now().Add(24 * time.Hour).Unix(),

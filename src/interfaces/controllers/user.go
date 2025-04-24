@@ -44,17 +44,27 @@ func (c *UserController) Signup(ctx *gin.Context) {
 	}
 
 	// ユーザー登録
-	token, err := c.userUsecase.Create(newUser, ctx.Request.Context())
+	newUser, err := c.userUsecase.Create(newUser, ctx.Request.Context())
 	if err != nil {
-		domainErr := &myerrors.DomainError{}
+		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {
-			err := ErrorHandle(domainErr)
-			ctx.JSON(HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
+			ErrorHandler(ctx, err)
 			return
 		}
 		// その他のエラー
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
-		return
+	}
+
+	// トークン生成
+	token, err := c.authService.GenerateToken(newUser.ID)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		// その他のエラー
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 	}
 
 	// jwtトークンをクライアントに返す
@@ -71,19 +81,28 @@ func (c *UserController) Login(ctx *gin.Context) {
 	}
 
 	// ログイン
-	token, err := c.userUsecase.FindByEmail(input.Email)
+	user, err := c.userUsecase.FindByEmail(input.Email)
 	if err != nil {
-		domainErr := &myerrors.DomainError{}
+		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {
-			err := ErrorHandle(domainErr)
-			ctx.JSON(HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
+			ErrorHandler(ctx, err)
 			return
 		}
-		// その他のエラー
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 		return
 	}
-
+	//	token生成
+	token, err := c.authService.GenerateToken(user.ID)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+	// jwtトークンをクライアントに返す
 	ctx.JSON(http.StatusOK, gin.H{"token": token})
 }
 
@@ -104,10 +123,9 @@ func (c *UserController) GetUserInfo(ctx *gin.Context) {
 
 	user, err := c.userUsecase.FindByID(userIDStr)
 	if err != nil {
-		domainErr := &myerrors.DomainError{}
+		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {
-			err := ErrorHandle(domainErr)
-			ctx.JSON(HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
+			ErrorHandler(ctx, err)
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})

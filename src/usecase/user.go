@@ -11,8 +11,8 @@ import (
 )
 
 type UserUsecase interface {
-	Create(newUser *models.Users, ctx context.Context) (models.Token, error)
-	FindByEmail(email string) (models.Token, error)
+	Create(newUser *models.Users, ctx context.Context) (*models.Users, error)
+	FindByEmail(email string) (*models.Users, error)
 	FindByID(userID string) (*models.Users, error)
 }
 
@@ -30,59 +30,31 @@ func NewUserUsecase(userRepo repositories.UserRepository, authService services.A
 	}
 }
 
-func (u *userUsecase) Create(newUser *models.Users, ctx context.Context) (models.Token, error) {
-	var generatedToken models.Token // トークンを格納する変数を宣言
-
-	// トランザクションを開始
-	err := u.tx.Do(ctx, func(txCtx context.Context) error {
-		_, err := u.userRepo.FindByEmail(ctx, newUser.Email)
-
-		// ユーザーが見つからなかった場合は新規作成
-		if err != nil && errors.Is(err, &myerrors.DomainError{ErrType: myerrors.QueryDataNotFoundError}) {
-			err = u.userRepo.Create(ctx, newUser) // context を渡す
-			if err != nil {
-				// リポジトリで技術的なエラーが発生した場合
-				return myerrors.NewDomainError(myerrors.QueryError, err.Error())
-			}
-
-			// token生成
-			token, err := u.authService.GenerateToken(newUser.ID)
-			if err != nil {
-				return err
-			}
-			generatedToken = token // トランザクション内で生成したトークンを格納
-			return nil
-		} else if err != nil {
-			// リポジトリで技術的なエラーが発生した場合
-			return myerrors.NewDomainError(myerrors.QueryError, err.Error())
-		}
-		// ユーザーが見つかった場合はエラーを返す
-		return myerrors.NewDomainError(myerrors.AlreadyExist, "このメールアドレスは既に登録されています")
-	})
+func (u *userUsecase) Create(newUser *models.Users, ctx context.Context) (*models.Users, error) {
+	// すでに存在するか確認
+	_, err := u.userRepo.FindByEmail(ctx, newUser.Email)
 	if err != nil {
-		// トランザクション内でエラーが発生した場合
-		var domainErr *myerrors.DomainError
-		if errors.As(err, &domainErr) {
-			// ドメインエラーの場合はそのまま返す
-			return "", domainErr
+		// ユーザーが存在しない場合
+		if errors.Is(err, &myerrors.DomainError{ErrType: myerrors.QueryDataNotFoundError}) {
+			if err := u.userRepo.Create(ctx, newUser); err != nil {
+				return nil, myerrors.NewDomainError(myerrors.QueryError, err.Error())
+			}
+			return newUser, nil
 		}
-		// その他のエラーの場合は一般的なエラーメッセージを返す
-		return "", myerrors.NewDomainError(myerrors.ErrorUnknown, "トランザクション中にエラーが発生しました")
+		// それ以外のエラー（DB障害など）
+		return nil, myerrors.NewDomainError(myerrors.QueryError, err.Error())
 	}
-	// トランザクションが成功した場合は、生成されたトークンを返す
-	return generatedToken, nil
+
+	// ユーザーがすでに存在していた場合
+	return nil, myerrors.NewDomainError(myerrors.AlreadyExist, "このメールアドレスは既に登録されています")
 }
 
-func (u *userUsecase) FindByEmail(email string) (models.Token, error) {
+func (u *userUsecase) FindByEmail(email string) (*models.Users, error) {
 	user, err := u.userRepo.FindByEmail(context.Background(), email)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	token, err := u.authService.GenerateToken(user.ID)
-	if err != nil {
-		return "", err
-	}
-	return token, nil
+	return user, nil
 }
 
 func (u *userUsecase) FindByID(userID string) (*models.Users, error) {

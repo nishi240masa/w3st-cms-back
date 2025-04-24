@@ -23,8 +23,10 @@ func NewUserRepositoryImpl(db *gorm.DB) repositories.UserRepository {
 // Create
 func (r *UserRepositoryImpl) Create(ctx context.Context, newUser *models.Users) *myerrors.DomainError { // context を引数に追加
 	result := r.db.WithContext(ctx).Create(newUser)
+
 	if result.Error != nil {
 		// クエリの実行中に発生したエラー
+
 		return myerrors.NewDomainError(myerrors.QueryError, result.Error.Error())
 	}
 	// ユーザーの作成に成功した場合
@@ -36,7 +38,6 @@ func (r *UserRepositoryImpl) FindByEmail(ctx context.Context, email string) (*mo
 	var user models.Users
 	result := r.db.WithContext(ctx).Where("email = ?", email).First(&user)
 
-	fmt.Println()
 	// エラーが発生した場合
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
