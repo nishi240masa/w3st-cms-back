@@ -24,8 +24,7 @@ func NewFactory(db *gorm.DB) Factory {
 
 func (f factory) InitUserController() *controllers.UserController {
 	userRepo := infrastructure.NewUserRepositoryImpl(f.DB)
-	txRepo := infrastructure.NewTransactionRepositoryImpl(f.DB)
-	userUsecase := usecase.NewUserUsecase(userRepo, txRepo)
+	userUsecase := usecase.NewUserUsecase(userRepo)
 	jwtAuthUsecase := usecase.NewjwtAuthUsecase()
 	userPresenter := presenter.NewUserPresenter()
 

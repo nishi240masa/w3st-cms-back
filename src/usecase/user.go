@@ -17,13 +17,11 @@ type UserUsecase interface {
 
 type userUsecase struct {
 	userRepo repositories.UserRepository
-	tx       repositories.TransactionRepository
 }
 
-func NewUserUsecase(userRepo repositories.UserRepository, txRepo repositories.TransactionRepository) UserUsecase {
+func NewUserUsecase(userRepo repositories.UserRepository) UserUsecase {
 	return &userUsecase{
 		userRepo: userRepo,
-		tx:       txRepo,
 	}
 }
 
