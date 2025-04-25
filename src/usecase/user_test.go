@@ -4,17 +4,15 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"w3st/domain/models"
-	"w3st/usecase"
-
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-
 	myerrors "w3st/errors"
 	mockRepositories "w3st/mock/repositories"
-	mockServices "w3st/mock/services"
+	"w3st/usecase"
 )
 
 func TestUserUsecase_Create_Success(t *testing.T) {
@@ -23,49 +21,29 @@ func TestUserUsecase_Create_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
-	mockAuthService := mockServices.NewMockAuthService(ctrl)
-	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
+	uc := usecase.NewUserUsecase(mockUserRepo)
 
-	uc := usecase.NewUserUsecase(mockUserRepo, mockTx)
-
+	ctx := context.Background()
 	newUser := &models.Users{
+		ID:       uuid.New(),
 		Name:     "Test User",
 		Email:    "test@example.com",
 		Password: "password123",
 	}
-	// モックの期待値設定
-	mockTx.
-		EXPECT().
-		Do(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
-			return fn(ctx) // 実際に渡された関数を実行する
-		})
 
-	mockUserRepo.
-		EXPECT().
-		FindByEmail(gomock.Any(), gomock.Eq("test@example.com")).
+	// ユーザーが見つからなかった場合
+	mockUserRepo.EXPECT().
+		FindByEmail(ctx, "test@example.com").
 		Return(nil, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, "not found"))
 
-	mockUserRepo.
-		EXPECT().
-		Create(gomock.Any(), gomock.Any()).
+	mockUserRepo.EXPECT().
+		Create(ctx, newUser).
 		Return(nil)
 
-	mockAuthService.
-		EXPECT().
-		GenerateToken(gomock.Any()).
-		Return(models.Token("mocked-token"), nil)
+	result, err := uc.Create(newUser, ctx)
 
-	// テスト実行
-	token, err := uc.Create(newUser, context.Background())
-	// errの型を確認
-	if err != nil {
-		t.Fatalf("Create() failed: %+v", err)
-	}
-
-	// 検証
-
-	assert.Equal(t, models.Token("mocked-token"), token)
+	require.NoError(t, err)
+	assert.Equal(t, newUser, result)
 }
 
 func TestUserUsecase_FindByEmail_Success(t *testing.T) {
@@ -74,29 +52,47 @@ func TestUserUsecase_FindByEmail_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
-	mockAuthService := mockServices.NewMockAuthService(ctrl)
-	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
-
-	uc := usecase.NewUserUsecase(mockUserRepo, mockTx)
+	uc := usecase.NewUserUsecase(mockUserRepo)
 
 	email := "success@example.com"
-	userID := uuid.New()
-	mockUser := &models.Users{
-		ID: userID,
+	expectedUser := &models.Users{
+		ID:    uuid.New(),
+		Email: email,
+		Name:  "Successful User",
 	}
 
 	mockUserRepo.EXPECT().
 		FindByEmail(gomock.Any(), email).
-		Return(mockUser, nil)
+		Return(expectedUser, nil)
 
-	mockAuthService.EXPECT().
-		GenerateToken(gomock.Any()).
-		Return(models.Token("mock-token"), nil)
+	result, err := uc.FindByEmail(email)
 
-	token, err := uc.FindByEmail(email)
-	if err != nil {
-		t.Fatalf("FindByEmail() failed: %+v", err)
+	require.NoError(t, err)
+	assert.Equal(t, expectedUser, result)
+}
+
+func TestUserUsecase_FindById_Success(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
+	uc := usecase.NewUserUsecase(mockUserRepo)
+
+	userID := uuid.New()
+	expectedUser := &models.Users{
+		ID:       userID,
+		Name:     "Test User",
+		Email:    "test@example.com",
+		Password: "secret123",
 	}
-	// 検証
-	assert.Equal(t, models.Token("mock-token"), token)
+
+	mockUserRepo.EXPECT().
+		FindByID(gomock.Any(), userID.String()).
+		Return(expectedUser, nil)
+
+	result, err := uc.FindByID(userID.String())
+
+	require.NoError(t, err)
+	assert.Equal(t, expectedUser, result)
 }

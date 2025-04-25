@@ -4,19 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/uuid"
-
-	"w3st/domain/models"
-	"w3st/usecase"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"w3st/domain/models"
 	myerrors "w3st/errors"
 	mockRepositories "w3st/mock/repositories"
-	mockServices "w3st/mock/services"
+	"w3st/usecase"
 )
 
 func TestUserUsecase_Create_AlreadyExists(t *testing.T) {
@@ -24,134 +19,122 @@ func TestUserUsecase_Create_AlreadyExists(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
-	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
+	mockRepo := mockRepositories.NewMockUserRepository(ctrl)
+	uc := usecase.NewUserUsecase(mockRepo)
 
-	uc := usecase.NewUserUsecase(mockUserRepo, mockTx)
-
+	ctx := context.Background()
 	newUser := &models.Users{
-		Name:     "Existing User",
-		Email:    "exist@example.com",
-		Password: "pass123",
+		Name:     "Alice",
+		Email:    "alice@example.com",
+		Password: "password123",
 	}
 
-	mockTx.EXPECT().Do(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
-		return fn(ctx)
-	})
-
-	mockUserRepo.EXPECT().FindByEmail(gomock.Any(), "exist@example.com").
+	mockRepo.EXPECT().FindByEmail(ctx, "alice@example.com").
 		Return(&models.Users{}, nil)
 
-	token, err := uc.Create(newUser, context.Background())
+	result, err := uc.Create(newUser, ctx)
 
 	require.Error(t, err)
-	assert.Equal(t, models.Token(""), token)
+	assert.Nil(t, result)
+
+	var domainErr *myerrors.DomainError
+	require.ErrorAs(t, err, &domainErr)
+	assert.Equal(t, myerrors.AlreadyExist, domainErr.ErrType)
 }
 
-func TestUserUsecase_Create_TokenGenerationFails(t *testing.T) {
+func TestUserUsecase_Create_FindByEmailFails(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
-	mockAuthService := mockServices.NewMockAuthService(ctrl)
-	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
+	mockRepo := mockRepositories.NewMockUserRepository(ctrl)
+	uc := usecase.NewUserUsecase(mockRepo)
 
-	uc := usecase.NewUserUsecase(mockUserRepo, mockTx)
-
+	ctx := context.Background()
 	newUser := &models.Users{
-		Name:     "Token Error",
-		Email:    "tokenfail@example.com",
+		Name:     "Bob",
+		Email:    "bob@example.com",
 		Password: "pass123",
 	}
 
-	mockTx.EXPECT().Do(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
-		return fn(ctx)
-	})
+	mockRepo.EXPECT().FindByEmail(ctx, "bob@example.com").
+		Return(nil, myerrors.NewDomainError(myerrors.QueryError, "DB接続エラー"))
 
-	mockUserRepo.EXPECT().FindByEmail(gomock.Any(), "tokenfail@example.com").
-		Return(nil, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, "not found"))
-
-	mockUserRepo.EXPECT().Create(gomock.Any(), gomock.Any()).
-		Return(nil)
-
-	mockAuthService.EXPECT().GenerateToken(gomock.Any()).
-		Return(models.Token(""), myerrors.NewDomainError(myerrors.RepositoryError, "token生成失敗"))
-	token, err := uc.Create(newUser, context.Background())
+	result, err := uc.Create(newUser, ctx)
 
 	require.Error(t, err)
-	assert.Equal(t, models.Token(""), token)
+	assert.Nil(t, result)
+
+	var domainErr *myerrors.DomainError
+	require.ErrorAs(t, err, &domainErr)
+	assert.Equal(t, myerrors.QueryError, domainErr.ErrType)
 }
 
-func TestUserUsecase_FindByEmail_RepoFails(t *testing.T) {
+func TestUserUsecase_Create_CreateFails(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
-	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
+	mockRepo := mockRepositories.NewMockUserRepository(ctrl)
+	uc := usecase.NewUserUsecase(mockRepo)
 
-	uc := usecase.NewUserUsecase(mockUserRepo, mockTx)
+	ctx := context.Background()
+	newUser := &models.Users{
+		Name:     "Charlie",
+		Email:    "charlie@example.com",
+		Password: "pass456",
+	}
+
+	mockRepo.EXPECT().FindByEmail(ctx, "charlie@example.com").
+		Return(nil, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, "ユーザーが見つかりません"))
+
+	mockRepo.EXPECT().Create(ctx, newUser).
+		Return(myerrors.NewDomainError(myerrors.QueryError, "insert失敗"))
+
+	result, err := uc.Create(newUser, ctx)
+
+	require.Error(t, err)
+	assert.Nil(t, result)
+
+	var domainErr *myerrors.DomainError
+	require.ErrorAs(t, err, &domainErr)
+	assert.Equal(t, myerrors.QueryError, domainErr.ErrType)
+}
+
+func TestUserUsecase_FindByEmail_DBError(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mockRepositories.NewMockUserRepository(ctrl)
+	uc := usecase.NewUserUsecase(mockRepo)
 
 	email := "notfound@example.com"
 
-	mockUserRepo.EXPECT().
-		FindByEmail(gomock.Any(), email).
-		Return(nil, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, "not found"))
+	mockRepo.EXPECT().FindByEmail(gomock.Any(), email).
+		Return(nil, myerrors.NewDomainError(myerrors.QueryError, "DB障害"))
 
-	token, err := uc.FindByEmail(email)
+	result, err := uc.FindByEmail(email)
 
 	require.Error(t, err)
-	assert.Equal(t, models.Token(""), token)
+	assert.Nil(t, result)
 }
 
-func TestUserUsecase_FindByEmail_QueryError(t *testing.T) {
+func TestUserUsecase_FindByID_DBError(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
+	mockRepo := mockRepositories.NewMockUserRepository(ctrl)
+	uc := usecase.NewUserUsecase(mockRepo)
 
-	uc := usecase.NewUserUsecase(mockUserRepo, nil)
+	userID := "invalid-uuid"
 
-	email := "queryfail@example.com"
+	mockRepo.EXPECT().FindByID(gomock.Any(), userID).
+		Return(nil, myerrors.NewDomainError(myerrors.QueryError, "DB障害"))
 
-	mockUserRepo.EXPECT().
-		FindByEmail(gomock.Any(), email).
-		Return(nil, myerrors.NewDomainError(myerrors.QueryError, "DB error"))
-
-	token, err := uc.FindByEmail(email)
-	require.Error(t, err)
-	assert.Equal(t, models.Token(""), token)
-}
-
-func TestUserUsecase_FindByEmail_TokenGenerationFails(t *testing.T) {
-	t.Parallel()
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockUserRepo := mockRepositories.NewMockUserRepository(ctrl)
-	mockAuthService := mockServices.NewMockAuthService(ctrl)
-	mockTx := mockRepositories.NewMockTransactionRepository(ctrl)
-
-	uc := usecase.NewUserUsecase(mockUserRepo, mockTx)
-
-	email := "failtoken@example.com"
-	userID := uuid.New()
-	mockUser := &models.Users{
-		ID: userID,
-	}
-
-	mockUserRepo.EXPECT().
-		FindByEmail(gomock.Any(), email).
-		Return(mockUser, nil)
-
-	mockAuthService.EXPECT().
-		GenerateToken(userID).
-		Return(models.Token(""), myerrors.NewDomainError(myerrors.RepositoryError, "token生成失敗"))
-
-	token, err := uc.FindByEmail(email)
+	result, err := uc.FindByID(userID)
 
 	require.Error(t, err)
-	assert.Equal(t, models.Token(""), token)
+	assert.Nil(t, result)
 }
