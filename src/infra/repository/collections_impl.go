@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"errors"
+	"fmt"
 
 	"w3st/domain/models"
 	myerrors "w3st/errors"
@@ -32,9 +33,27 @@ func (r *CollectionsRepository) CreateCollection(newCollection *models.ApiCollec
 	return nil
 }
 
-func (r *CollectionsRepository) GetCollectionByUserId(userId uuid.UUID) (*models.ApiCollection, error) {
+func (r *CollectionsRepository) GetCollectionByUserId(userId uuid.UUID) ([]models.ApiCollection, error) {
+	var collection []models.ApiCollection
+	result := r.db.Where("user_id = ?", userId).Find(&collection)
+
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, myerrors.NewDomainErrorWithMessage(myerrors.QueryDataNotFoundError, "コレクションが見つかりません")
+		}
+		// その他のエラー
+		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error)
+	}
+
+	// 中身を出力
+	fmt.Print(collection)
+
+	return collection, nil
+}
+
+func (r *CollectionsRepository) GetCollectionsByCollectionId(collectionId string, userId uuid.UUID) (*models.ApiCollection, error) {
 	var collection models.ApiCollection
-	result := r.db.Where("user_id = ?", userId).First(&collection)
+	result := r.db.Where("id = ? AND user_id = ?", collectionId, userId).First(&collection)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {

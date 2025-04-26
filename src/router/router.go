@@ -65,8 +65,11 @@ func Init() {
 	// Collectionを追加
 	collections.POST("", middlewares.JwtAuthMiddleware(authUsecase), collectionController.MakeCollection)
 
-	// Collectionを取得
+	// Collection一覧を取得
 	collections.GET("", middlewares.JwtAuthMiddleware(authUsecase), collectionController.GetCollectionByUserId)
+
+	// Collectionを取得
+	collections.GET("/:collectionId", middlewares.JwtAuthMiddleware(authUsecase), collectionController.GetCollectionsByCollectionId)
 
 	// 指定されたポートでサーバーを開始
 	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {
