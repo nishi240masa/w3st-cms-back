@@ -12,6 +12,7 @@ import (
 type Factory interface {
 	InitUserController() *controllers.UserController
 	InitAuthUsecase() usecase.JwtUsecase
+	InitCollectionController() *controllers.CollectionsController
 }
 
 type factory struct {
@@ -33,4 +34,11 @@ func (f factory) InitUserController() *controllers.UserController {
 
 func (f factory) InitAuthUsecase() usecase.JwtUsecase {
 	return usecase.NewjwtAuthUsecase()
+}
+
+func (f factory) InitCollectionController() *controllers.CollectionsController {
+	collectionRepo := infrastructure.NewCollectionsRepository(f.DB)
+	collectionUsecase := usecase.NewCollectionsUsecase(collectionRepo)
+
+	return controllers.NewCollectionsController(collectionUsecase)
 }

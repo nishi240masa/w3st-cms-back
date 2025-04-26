@@ -1,11 +1,12 @@
 package models
 
+import "time"
+
 type ApiCollection struct {
-	ID        int    `gorm:"type:serial;primary_key" json:"id"`
-	UserID    UUID   `gorm:"type:uuid;not null" json:"user_id"`
-	FieldID   string `gorm:"type:varchar(100);not null" json:"fieldId"`
-	ViewName  string `gorm:"type:varchar(100);not null" json:"viewName"`
-	FieldType string `gorm:"type:varchar(50);not null" json:"fieldType"`
-	CreateAt  string `gorm:"type:timestamp;not null" json:"createAt"`
-	UpdateAt  string `gorm:"type:timestamp;not null" json:"updateAt"`
+	ID          int       `gorm:"type:serial;primary_key" json:"id"`
+	UserID      UUID      `gorm:"type:uuid;not null" json:"user_id"`
+	Name        string    `gorm:"type:varchar(100);not null" json:"name"`
+	Description string    `gorm:"not null" json:"description"`
+	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 }

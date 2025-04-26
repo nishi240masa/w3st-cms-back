@@ -49,6 +49,10 @@ func Init() {
 	// Auth
 	authUsecase := f.InitAuthUsecase()
 
+	// Collections
+	collections := r.Group("/collections")
+	collectionController := f.InitCollectionController()
+
 	// ユーザー登録
 	users.POST("/signup", userController.Signup)
 
@@ -57,6 +61,9 @@ func Init() {
 
 	// ユーザー情報取得
 	users.GET("/me", middlewares.JwtAuthMiddleware(authUsecase), userController.GetUserInfo)
+
+	// Collectionを追加
+	collections.POST("", middlewares.JwtAuthMiddleware(authUsecase), collectionController.MakeCollection)
 
 	// 指定されたポートでサーバーを開始
 	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {
