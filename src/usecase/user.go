@@ -32,16 +32,16 @@ func (u *userUsecase) Create(newUser *models.Users, ctx context.Context) (*model
 		// ユーザーが存在しない場合
 		if errors.Is(err, &myerrors.DomainError{ErrType: myerrors.QueryDataNotFoundError}) {
 			if err := u.userRepo.Create(ctx, newUser); err != nil {
-				return nil, myerrors.NewDomainError(myerrors.QueryError, err.Error())
+				return nil, myerrors.WrapDomainError("usecase.Create", err)
 			}
 			return newUser, nil
 		}
 		// それ以外のエラー（DB障害など）
-		return nil, myerrors.NewDomainError(myerrors.QueryError, err.Error())
+		return nil, myerrors.WrapDomainError("usecase.Create", err)
 	}
 
 	// ユーザーがすでに存在していた場合
-	return nil, myerrors.NewDomainError(myerrors.AlreadyExist, "このメールアドレスは既に登録されています")
+	return nil, myerrors.NewDomainErrorWithMessage(myerrors.AlreadyExist, "ユーザーはすでに存在します")
 }
 
 func (u *userUsecase) FindByEmail(email string) (*models.Users, error) {

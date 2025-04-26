@@ -40,7 +40,7 @@ func (a *jwtAuthUsecase) GenerateToken(userID uuid.UUID) (models.Token, error) {
 
 	signedToken, err := token.SignedString([]byte(a.secretKey))
 	if err != nil {
-		return "", errors.NewDomainError(errors.ErrorUnknown, "トークンの生成に失敗しました")
+		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "トークンの生成に失敗しました")
 	}
 
 	return models.Token(signedToken), nil
@@ -50,30 +50,30 @@ func (a *jwtAuthUsecase) GenerateToken(userID uuid.UUID) (models.Token, error) {
 func (a *jwtAuthUsecase) ValidateToken(token string) (string, error) {
 	parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.NewDomainError(errors.ErrorUnknown, "署名方式が不正です")
+			return nil, errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "署名方式が不正です")
 		}
 		return []byte(a.secretKey), nil
 	})
 	if err != nil {
-		return "", errors.NewDomainError(errors.ErrorUnknown, "トークンのパースに失敗しました")
+		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "トークンのパースに失敗しました")
 	}
 
 	if !parsedToken.Valid {
-		return "", errors.NewDomainError(errors.ErrorUnknown, "無効なトークンです")
+		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "無効なトークンです")
 	}
 
 	claims, ok := parsedToken.Claims.(jwt.MapClaims)
 	if !ok || claims["sub"] == nil {
-		return "", errors.NewDomainError(errors.ErrorUnknown, "claimsの取得に失敗しました")
+		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "claimsの取得に失敗しました")
 	}
 
 	subStr, ok := claims["sub"].(string)
 	if !ok {
-		return "", errors.NewDomainError(errors.ErrorUnknown, "subの型が不正です")
+		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "subの型が不正です")
 	}
 
 	if _, err := uuid.Parse(subStr); err != nil {
-		return "", errors.NewDomainError(errors.ErrorUnknown, "UUIDのパースに失敗しました")
+		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "UUIDのパースに失敗しました")
 	}
 
 	return subStr, nil

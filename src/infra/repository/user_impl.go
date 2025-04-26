@@ -27,7 +27,7 @@ func (r *UserRepositoryImpl) Create(ctx context.Context, newUser *models.Users) 
 	if result.Error != nil {
 		// クエリの実行中に発生したエラー
 
-		return myerrors.NewDomainError(myerrors.QueryError, result.Error.Error())
+		return myerrors.NewDomainError(myerrors.QueryError, result.Error)
 	}
 	// ユーザーの作成に成功した場合
 	return nil
@@ -41,11 +41,10 @@ func (r *UserRepositoryImpl) FindByEmail(ctx context.Context, email string) (*mo
 	// エラーが発生した場合
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return &user, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, "ユーザーが見つかりません")
+			return &user, myerrors.NewDomainErrorWithMessage(myerrors.QueryDataNotFoundError, "ユーザーが見つかりません")
 		}
 		// その他のエラー
-		fmt.Println("その他のエラー:", result.Error)
-		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error.Error())
+		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error)
 	}
 
 	return &user, nil
@@ -59,11 +58,11 @@ func (r *UserRepositoryImpl) FindByID(ctx context.Context, userID string) (*mode
 	// エラーが発生した場合
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return &user, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, "ユーザーが見つかりません")
+			return &user, myerrors.NewDomainErrorWithMessage(myerrors.QueryDataNotFoundError, "ユーザーが見つかりません")
 		}
 		// その他のエラー
 		fmt.Println("その他のエラー:", result.Error)
-		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error.Error())
+		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error)
 	}
 
 	return &user, nil

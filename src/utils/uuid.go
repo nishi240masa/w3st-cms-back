@@ -9,7 +9,7 @@ import (
 func StringToUUID(s string) (uuid.UUID, error) {
 	id, err := uuid.Parse(s)
 	if err != nil {
-		return uuid.Nil, errors.NewDomainError(errors.InvalidParameter, "invalid uuid")
+		return uuid.Nil, errors.NewDomainErrorWithMessage(errors.InvalidParameter, "invalid uuid")
 	}
 	return id, nil
 }

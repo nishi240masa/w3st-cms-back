@@ -58,7 +58,7 @@ func TestUserUsecase_Create_FindByEmailFails(t *testing.T) {
 	}
 
 	mockRepo.EXPECT().FindByEmail(ctx, "bob@example.com").
-		Return(nil, myerrors.NewDomainError(myerrors.QueryError, "DB接続エラー"))
+		Return(nil, myerrors.NewDomainErrorWithMessage(myerrors.QueryError, "DB接続エラー"))
 
 	result, err := uc.Create(newUser, ctx)
 
@@ -86,10 +86,10 @@ func TestUserUsecase_Create_CreateFails(t *testing.T) {
 	}
 
 	mockRepo.EXPECT().FindByEmail(ctx, "charlie@example.com").
-		Return(nil, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, "ユーザーが見つかりません"))
+		Return(nil, myerrors.NewDomainErrorWithMessage(myerrors.QueryDataNotFoundError, "ユーザーが見つかりません"))
 
 	mockRepo.EXPECT().Create(ctx, newUser).
-		Return(myerrors.NewDomainError(myerrors.QueryError, "insert失敗"))
+		Return(myerrors.NewDomainErrorWithMessage(myerrors.QueryError, "insert失敗"))
 
 	result, err := uc.Create(newUser, ctx)
 
@@ -112,7 +112,7 @@ func TestUserUsecase_FindByEmail_DBError(t *testing.T) {
 	email := "notfound@example.com"
 
 	mockRepo.EXPECT().FindByEmail(gomock.Any(), email).
-		Return(nil, myerrors.NewDomainError(myerrors.QueryError, "DB障害"))
+		Return(nil, myerrors.NewDomainErrorWithMessage(myerrors.QueryError, "DB障害"))
 
 	result, err := uc.FindByEmail(email)
 
@@ -131,7 +131,7 @@ func TestUserUsecase_FindByID_DBError(t *testing.T) {
 	userID := "invalid-uuid"
 
 	mockRepo.EXPECT().FindByID(gomock.Any(), userID).
-		Return(nil, myerrors.NewDomainError(myerrors.QueryError, "DB障害"))
+		Return(nil, myerrors.NewDomainErrorWithMessage(myerrors.QueryError, "DB障害"))
 
 	result, err := uc.FindByID(userID)
 

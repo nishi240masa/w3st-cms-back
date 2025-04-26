@@ -28,39 +28,40 @@ func (t *TransactionRepositoryImpl) Do(ctx context.Context, f func(ctx context.C
 		return f(ctx)
 	}
 
-	// この関数は、トランザクションを開始し、f関数を実行します。
 	err := t.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		//　トランザクション内でpanicが発生した場合、ロールバックを行う
 		defer func() {
 			if r := recover(); r != nil {
 				tx.Rollback()
-				// panicの内容をエラーメッセージとして返す
-				err := errors.NewDomainError(errors.TransactionError, "トランザクション中にpanicが発生しました: "+fmt.Sprintf("%v", r))
-				// panicの内容をエラーメッセージとして返す
-				panic(err)
+				panic(errors.NewDomainErrorWithMessage(
+					errors.TransactionError,
+					fmt.Sprintf("トランザクション中にpanicが発生しました: %v", r),
+				))
 			}
 		}()
 
-		// トランザクションのコンテキストを作成
 		txCtx := context.WithValue(ctx, txKey, tx)
 
-		// トランザクションのコンテキストをf関数に渡す
 		if err := f(txCtx); err != nil {
-			// エラーが発生した場合、トランザクションをロールバック
 			if rollbackErr := tx.Rollback().Error; rollbackErr != nil {
-				// ロールバックに失敗した場合、エラーメッセージを返す
-				return errors.NewDomainError(errors.TransactionError, "トランザクションのロールバックに失敗しました: "+rollbackErr.Error())
+				return errors.NewDomainErrorWithMessage(
+					errors.TransactionError,
+					fmt.Sprintf("トランザクションのロールバックに失敗しました: %v", rollbackErr),
+				)
 			}
-			// ロールバックに成功した場合、エラーメッセージを返す
-			return errors.NewDomainError(errors.TransactionError, "トランザクション中にエラーが発生しました: "+err.Error())
+			return errors.NewDomainErrorWithMessage(
+				errors.TransactionError,
+				fmt.Sprintf("トランザクション中にエラーが発生しました: %v", err),
+			)
 		}
-		// エラーが発生しなかった場合、トランザクションをコミット
+
 		return nil
 	})
 	if err != nil {
-		// トランザクションのコミットに失敗した場合、エラーメッセージを返す
-		return errors.NewDomainError(errors.TransactionError, "トランザクションのコミットに失敗しました: "+err.Error())
+		return errors.NewDomainErrorWithMessage(
+			errors.TransactionError,
+			fmt.Sprintf("トランザクションのコミットに失敗しました: %v", err),
+		)
 	}
-	// トランザクションのコミットに成功した場合、nilを返す
+
 	return nil
 }

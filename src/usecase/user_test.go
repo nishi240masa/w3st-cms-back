@@ -34,7 +34,7 @@ func TestUserUsecase_Create_Success(t *testing.T) {
 	// ユーザーが見つからなかった場合
 	mockUserRepo.EXPECT().
 		FindByEmail(ctx, "test@example.com").
-		Return(nil, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, "not found"))
+		Return(nil, myerrors.NewDomainErrorWithMessage(myerrors.QueryDataNotFoundError, "not found"))
 
 	mockUserRepo.EXPECT().
 		Create(ctx, newUser).
