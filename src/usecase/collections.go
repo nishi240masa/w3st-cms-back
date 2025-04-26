@@ -4,10 +4,13 @@ import (
 	"w3st/domain/models"
 	"w3st/domain/repositories"
 	myerrors "w3st/errors"
+
+	"github.com/google/uuid"
 )
 
 type CollectionsUsecase interface {
 	Make(newCollection *models.ApiCollection) error
+	GetCollectionByUserId(userId uuid.UUID) (*models.ApiCollection, error)
 }
 
 type collectionsUsecase struct {
@@ -21,13 +24,19 @@ func NewCollectionsUsecase(collectionsRepo repositories.CollectionsRepository) C
 }
 
 func (c *collectionsUsecase) Make(newCollection *models.ApiCollection) error {
-
 	// コレクションを作成する
 	err := c.collectionsRepo.CreateCollection(newCollection)
 	if err != nil {
 		// エラー処理
-		return myerrors.NewDomainError(myerrors.QueryError, err.Error())
+		return myerrors.WrapDomainError("collectionsUsecase.Make", err)
 	}
 	return nil
+}
 
+func (c *collectionsUsecase) GetCollectionByUserId(userId uuid.UUID) (*models.ApiCollection, error) {
+	collection, err := c.collectionsRepo.GetCollectionByUserId(userId)
+	if err != nil {
+		return nil, myerrors.WrapDomainError("collectionsUsecase.GetCollectionByUserId", err)
+	}
+	return collection, nil
 }
