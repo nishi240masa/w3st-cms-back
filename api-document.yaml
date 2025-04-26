@@ -96,7 +96,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CollectionInput"
+              type: object
+              properties:
+                message:
+                  type: string
+
       security:
         - bearerAuth: []
       responses:
