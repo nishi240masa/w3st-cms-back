@@ -1,25 +1,18 @@
-# Goの公式イメージを使用
-FROM golang:1.23-alpine
+# 本番用イメージ
+FROM alpine:latest
 
-# 必要なツールをインストール
-RUN apk update && apk add --no-cache git
 
-# 作業ディレクトリを設定
-WORKDIR /go/src/app/
+# 作業ディレクトリ
+WORKDIR /root/
 
-# go.mod と go.sum をコピーして依存関係をダウンロード
-COPY ./src/go.mod ./src/go.sum ./
-RUN go mod download
+# ビルド済みバイナリをコピー
+COPY ./src/main ./
 
-# アプリケーションコードをコピー
-COPY ./src/ ./
 
-# アプリケーションのビルド
-RUN go build -o main .
 
-# RenderのPORT環境変数を使用
+# 環境変数・ポート設定
 ENV PORT=8080
 EXPOSE 8080
 
-# アプリケーションを起動
+# アプリケーション起動
 CMD ["./main"]

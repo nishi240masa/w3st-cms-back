@@ -34,6 +34,16 @@ services:
     networks:
       - private-net
 
+  # swagger-ui
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    environment:
+      SWAGGER_JSON: /api/api-document.yaml
+    volumes:
+      - ./api-document.yaml:/api/api-document.yaml:ro
+    ports:
+      - "127.0.0.1:3000:8080"
+
 volumes:
   db-store:
     driver: local

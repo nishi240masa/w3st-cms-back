@@ -4,3 +4,8 @@ tmp
 data
 
 /.DS_Store
+
+# Go binaries
+*.exe
+*.out
+*.test

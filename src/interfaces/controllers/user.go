@@ -1,107 +1,134 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
-	"w3st/dto"
-	"w3st/services"
 
 	"github.com/gin-gonic/gin"
+
+	"w3st/domain/models"
+	"w3st/dto"
+	myerrors "w3st/errors"
+	"w3st/presenter"
+	"w3st/usecase"
 )
 
-// func extractJWTFromHeader(c *gin.Context) (string, error) {
-// 	authHeader := c.GetHeader("Authorization")
-// 	if authHeader == "" {
-// 		return "", errors.New("missing Authorization header")
-// 	}
+type UserController struct {
+	userUsecase    usecase.UserUsecase
+	jwtAuthUsecase usecase.JwtUsecase
+	userPresenter  presenter.UserPresenter
+}
 
-// 	parts := strings.Split(authHeader, " ")
-// 	if len(parts) != 2 || parts[0] != "Bearer" {
-// 		return "", errors.New("invalid Authorization header format")
-// 	}
+func NewUserController(userUsecase usecase.UserUsecase, jwtAuthUsecase usecase.JwtUsecase, userPresenter presenter.UserPresenter) *UserController {
+	return &UserController{
+		userUsecase:    userUsecase,
+		jwtAuthUsecase: jwtAuthUsecase,
+		userPresenter:  userPresenter,
+	}
+}
 
-// 	return parts[1], nil
-// }
-
-// func GetUsers(c *gin.Context) {
-
-// 	users, err := services.GetUsers()
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, users)
-// }
-
-// func GetUser(c *gin.Context) {
-
-// 	userId := c.Param("id")
-
-// 	user, err := services.GetUser(userId)
-// 	if err != nil {
-// 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, user)
-// }
-
-func Signup(c *gin.Context) {
+func (c *UserController) Signup(ctx *gin.Context) {
 	var input dto.SignupData
 
 	// リクエストのバインド
-	if  err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := ctx.ShouldBindJSON(&input); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	newUser := &models.Users{
+		Name:     input.Name,
+		Email:    input.Email,
+		Password: input.Password,
 	}
 
 	// ユーザー登録
-	user, err := services.Signup(input)
+	newUser, err := c.userUsecase.Create(newUser, ctx.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		// その他のエラー
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 	}
 
-	c.JSON(http.StatusOK, user)
+	// トークン生成
+	token, err := c.jwtAuthUsecase.GenerateToken(newUser.ID)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		// その他のエラー
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+	}
+
+	// jwtトークンをクライアントに返す
+	ctx.JSON(http.StatusOK, gin.H{"token": token})
 }
 
-func Login(c *gin.Context) {
+func (c *UserController) Login(ctx *gin.Context) {
 	var input dto.LoginData
 
 	// リクエストのバインド
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := ctx.ShouldBindJSON(&input); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// ログイン
-	token, err := services.Login(input)
-		if err != nil {
-			if err.Error() == "User not found" {
-				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-				return
-			}
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
+	user, err := c.userUsecase.FindByEmail(input.Email)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
 		}
-
-
-	c.JSON(http.StatusOK, token)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+	//	token生成
+	token, err := c.jwtAuthUsecase.GenerateToken(user.ID)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+	// jwtトークンをクライアントに返す
+	ctx.JSON(http.StatusOK, gin.H{"token": token})
 }
 
-// func CreateUser(c *gin.Context) {
+func (c *UserController) GetUserInfo(ctx *gin.Context) {
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
 
-// 	var input dto.CreateUserData
-// 	if err := c.ShouldBindJSON(&input); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
+	// ユーザー情報の取得
+	// userIDはstring型であることを確認
+	userIDStr, ok := userID.(string)
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
 
-// 	user, err := services.CreateUser(input)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, user)
-// }
+	user, err := c.userUsecase.FindByID(userIDStr)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"user": user})
+}

@@ -1,0 +1,80 @@
+name: Go CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    paths:
+      - 'src/**'
+      - '.github/workflows/go.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 対象ブランチをクローン
+        uses: actions/checkout@v4
+
+      - name: Goの準備
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24.2
+
+      - name: Goのキャッシュ
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Goの依存関係をインストール
+        run: go install github.com/golang/mock/mockgen@v1.6.0
+
+      - name: Generate mocks
+        run: make mock
+
+      - name: Check mock diffs
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Mocks were not up-to-date. Please run 'make mock' and commit the changes."
+            git diff
+            exit 1
+          fi
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.1.2
+          working-directory: src
+          args: --timeout=5m
+          skip-cache: false
+
+      - name: Goのテスト実行&カバレッジ取得
+        run: go test ./... -v -coverprofile=coverage.out
+        working-directory: ./src
+
+      - name: カバレッジのHTMLレポートを生成
+        if: success()
+        run: go tool cover -html=coverage.out -o coverage.html
+        working-directory: ./src
+
+      - name: coverage.html の確認
+        run: ls -lh coverage.html
+        working-directory: ./src
+
+      - name: カバレッジのHTMLレポートをアップロード
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: src/coverage.html
+
+      - name: mockgenの差分を自動コミット
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update generated mocks"
+          branch: ${{ github.head_ref }}
+          file_pattern: "mock/"

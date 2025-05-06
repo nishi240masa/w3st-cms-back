@@ -11,9 +11,8 @@ import (
 
 // SetupDB initializes the database connection and creates tables if they don't exist
 func SetupDB() *gorm.DB {
-	// データソース名を環境変数から取得
 	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Tokyo",
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=require TimeZone=Asia/Tokyo",
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
@@ -21,21 +20,18 @@ func SetupDB() *gorm.DB {
 		os.Getenv("DB_PORT"),
 	)
 
-	// データベースに接続
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
-		panic(err)
 	}
 
-	// すでにマイグレーション済みかチェック (users テーブルがあるか確認)
+	// Check if 'users' table exists
 	var exists bool
 	checkSQL := `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users');`
 	if err := db.Raw(checkSQL).Scan(&exists).Error; err != nil {
 		log.Fatalf("Failed to check existing tables: %v", err)
 	}
 
-	// すでにテーブルがある場合はマイグレーションをスキップ
 	if exists {
 		log.Println("Database schema already exists. Skipping migration.")
 		return db
@@ -43,9 +39,11 @@ func SetupDB() *gorm.DB {
 
 	log.Println("Running database migrations...")
 
-	// マイグレーション
-	initSQL := `
-	CREATE TABLE IF NOT EXISTS users (
+	// Migrations
+	createSQL := `
+	CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+	CREATE TABLE users (
 		id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
 		name VARCHAR(100) NOT NULL,
 		email VARCHAR(255) UNIQUE NOT NULL,
@@ -55,7 +53,7 @@ func SetupDB() *gorm.DB {
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
 
-	CREATE TABLE IF NOT EXISTS apiSchema (
+	CREATE TABLE apiSchema (
 		id SERIAL PRIMARY KEY,
 		user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 		field_id VARCHAR(100) NOT NULL,
@@ -65,7 +63,7 @@ func SetupDB() *gorm.DB {
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
 
-	CREATE TABLE IF NOT EXISTS field_data (
+	CREATE TABLE field_data (
 		id SERIAL PRIMARY KEY,
 		apiSchema_id INT NOT NULL REFERENCES apiSchema(id) ON DELETE CASCADE,
 		field_type VARCHAR(50) NOT NULL,
@@ -74,7 +72,7 @@ func SetupDB() *gorm.DB {
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
 
-	CREATE TABLE IF NOT EXISTS list_options (
+	CREATE TABLE list_options (
 		id SERIAL PRIMARY KEY,
 		apiSchema_id INT NOT NULL REFERENCES apiSchema(id) ON DELETE CASCADE,
 		value VARCHAR(255) NOT NULL,
@@ -82,7 +80,7 @@ func SetupDB() *gorm.DB {
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
 
-	CREATE TABLE IF NOT EXISTS api_kind_relation (
+	CREATE TABLE api_kind_relation (
 		id SERIAL PRIMARY KEY,
 		apiSchema_id INT NOT NULL REFERENCES apiSchema(id) ON DELETE CASCADE,
 		related_id INT NOT NULL REFERENCES apiSchema(id) ON DELETE CASCADE,
@@ -90,11 +88,18 @@ func SetupDB() *gorm.DB {
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
+	`
+	if err := db.Exec(createSQL).Error; err != nil {
+		log.Fatalf("Error executing table creation: %v", err)
+	}
 
-	-- トリガー関数の作成 (IF NOT EXISTS はトリガー関数には使えないので、関数がすでに存在するかチェック)
-	DO $$ BEGIN
-		IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'cascade_delete_apiSchema') THEN
-			CREATE OR REPLACE FUNCTION cascade_delete_apiSchema()
+	// Create trigger functions and triggers
+	triggerSQL := `
+	DO $$
+	BEGIN
+		-- cascade_delete_apiSchema
+		IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'cascade_delete_apischema') THEN
+			CREATE FUNCTION cascade_delete_apischema()
 			RETURNS TRIGGER AS $$
 			BEGIN
 				DELETE FROM field_data WHERE apiSchema_id = OLD.id;
@@ -104,11 +109,10 @@ func SetupDB() *gorm.DB {
 			END;
 			$$ LANGUAGE plpgsql;
 		END IF;
-	END $$;
 
-	DO $$ BEGIN
+		-- validate_list_options
 		IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'validate_list_options') THEN
-			CREATE OR REPLACE FUNCTION validate_list_options()
+			CREATE FUNCTION validate_list_options()
 			RETURNS TRIGGER AS $$
 			DECLARE
 				schema_type VARCHAR(50);
@@ -121,11 +125,10 @@ func SetupDB() *gorm.DB {
 			END;
 			$$ LANGUAGE plpgsql;
 		END IF;
-	END $$;
 
-	DO $$ BEGIN
+		-- check_cyclic_relation
 		IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'check_cyclic_relation') THEN
-			CREATE OR REPLACE FUNCTION check_cyclic_relation()
+			CREATE FUNCTION check_cyclic_relation()
 			RETURNS TRIGGER AS $$
 			DECLARE
 				is_cyclic BOOLEAN;
@@ -135,7 +138,10 @@ func SetupDB() *gorm.DB {
 					UNION ALL
 					SELECT r.related_id FROM api_kind_relation r INNER JOIN relation_path rp ON rp.related_id = r.apiSchema_id
 				)
-				SELECT EXISTS (SELECT 1 FROM relation_path WHERE related_id = NEW.apiSchema_id) INTO is_cyclic;
+				SELECT EXISTS (
+					SELECT 1 FROM relation_path WHERE related_id = NEW.apiSchema_id
+				) INTO is_cyclic;
+
 				IF is_cyclic THEN
 					RAISE EXCEPTION 'Cyclic relation detected';
 				END IF;
@@ -143,25 +149,41 @@ func SetupDB() *gorm.DB {
 			END;
 			$$ LANGUAGE plpgsql;
 		END IF;
-	END $$;
+	END
+	$$;
 
-	-- 各テーブルのトリガー設定
-	CREATE TRIGGER IF NOT EXISTS delete_related_data
-	AFTER DELETE ON apiSchema
-	FOR EACH ROW EXECUTE FUNCTION cascade_delete_apiSchema();
+	-- Triggers
+	DO $$
+	BEGIN
+		IF NOT EXISTS (
+			SELECT 1 FROM pg_trigger WHERE tgname = 'delete_related_data'
+		) THEN
+			CREATE TRIGGER delete_related_data
+			AFTER DELETE ON apiSchema
+			FOR EACH ROW EXECUTE FUNCTION cascade_delete_apischema();
+		END IF;
 
-	CREATE TRIGGER IF NOT EXISTS validate_options
-	BEFORE INSERT ON list_options
-	FOR EACH ROW EXECUTE FUNCTION validate_list_options();
+		IF NOT EXISTS (
+			SELECT 1 FROM pg_trigger WHERE tgname = 'validate_options'
+		) THEN
+			CREATE TRIGGER validate_options
+			BEFORE INSERT ON list_options
+			FOR EACH ROW EXECUTE FUNCTION validate_list_options();
+		END IF;
 
-	CREATE TRIGGER IF NOT EXISTS prevent_cyclic_relation
-	BEFORE INSERT ON api_kind_relation
-	FOR EACH ROW EXECUTE FUNCTION check_cyclic_relation();
+		IF NOT EXISTS (
+			SELECT 1 FROM pg_trigger WHERE tgname = 'prevent_cyclic_relation'
+		) THEN
+			CREATE TRIGGER prevent_cyclic_relation
+			BEFORE INSERT ON api_kind_relation
+			FOR EACH ROW EXECUTE FUNCTION check_cyclic_relation();
+		END IF;
+	END
+	$$;
 	`
 
-	// SQL実行
-	if err := db.Exec(initSQL).Error; err != nil {
-		log.Fatalf("Error executing initSQL: %v", err)
+	if err := db.Exec(triggerSQL).Error; err != nil {
+		log.Fatalf("Error executing trigger SQL: %v", err)
 	}
 
 	log.Println("Database migration completed successfully.")

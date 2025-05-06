@@ -1,0 +1,532 @@
+openapi: 3.0.2
+info:
+  title: w3st CMS API
+  version: 1.0.0
+  description: ユーザーが動的にAPIスキーマとデータ構造を定義できるサービス
+
+servers:
+  - url: http://localhost:8080
+    description: 開発環境
+
+tags:
+  - name: Users
+  - name: Collections
+  - name: Fields
+  - name: Entries
+  - name: ListOptions
+  - name: Relations
+  - name: APIKeys
+
+paths:
+  /users/signup:
+    post:
+      tags: [Users]
+      summary: ユーザー登録
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: ユーザー作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+
+  /users/login:
+    post:
+      tags: [Users]
+      summary: ログイン
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: JWT トークン返却
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: ログイン中ユーザー情報
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: ユーザー情報
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserGetResponse"
+
+  /collections:
+    get:
+      tags: [Collections]
+      summary: 自分のコレクション一覧
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 一覧取得
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CollectionResponse"
+    post:
+      tags: [Collections]
+      summary: 自分のコレクション作成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponse"
+
+  /collections/{collectionId}:
+    get:
+      tags: [Collections]
+      summary: 自分のコレクション詳細
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: コレクション情報
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionResponse"
+
+    delete:
+      tags: [Collections]
+      summary: 自分のコレクション削除
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: 削除成功
+
+  /collections/{collectionId}/fields:
+    get:
+      tags: [Fields]
+      summary: 自分のフィールド一覧
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 一覧取得
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FieldResponse"
+
+    post:
+      tags: [Fields]
+      summary: フィールド作成
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FieldInput"
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FieldResponse"
+
+  /fields/{fieldId}/options:
+    post:
+      tags: [ListOptions]
+      summary: 自分の選択肢を追加
+      parameters:
+        - name: fieldId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  type: string
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptionResponse"
+
+  /collections/{collectionId}/entries:
+    get:
+      tags: [Entries]
+      summary: 公開用エンドポイント
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      security:
+        - apiKeyAuth: [ ]
+      responses:
+        "200":
+          description: 一覧取得
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EntryResponse"
+    post:
+      tags: [Entries]
+      summary: データ追加
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "201":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntryResponse"
+
+
+
+  /collections/{collectionId}/relations:
+    post:
+      tags: [Relations]
+      summary: 他のコレクションとのリレーション追加
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                related_collection_id:
+                  type: integer
+                relation_type:
+                  type: string
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RelationResponse"
+
+  /apikeys:
+    post:
+      tags: [ APIKeys ]
+      summary: APIキーの発行
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyCreateRequest"
+      responses:
+        "201":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyResponse"
+
+    get:
+      tags: [ APIKeys ]
+      summary: APIキー一覧取得
+      security:
+        - bearerAuth: [ ]
+      responses:
+        "200":
+          description: APIキー一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKeyResponse"
+
+  /apikeys/{apiKeyId}:
+    delete:
+      tags: [ APIKeys ]
+      summary: APIキーの削除（論理削除 / 無効化）
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: apiKeyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: 削除成功
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+
+  schemas:
+    UserInput:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+
+    UserResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserGetResponse"
+
+    UserGetResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+
+    CollectionInput:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    CollectionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldResponse"
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntryResponse"
+        relations:
+          type: array
+          items:
+            $ref: "#/components/schemas/RelationResponse"
+
+    FieldInput:
+      type: object
+      properties:
+        field_id:
+          type: string
+        view_name:
+          type: string
+        field_type:
+          type: string
+          enum: [text, number, boolean, select, dropdown, relation]
+        is_required:
+          type: boolean
+        default_value:
+          type: object
+        relation_config:
+          type: object
+          nullable: true
+          properties:
+            related_collection_id:
+              type: integer
+            relation_type:
+              type: string
+              enum: [ oneToOne, oneToMany, manyToOne, manyToMany ]
+
+    FieldResponse:
+      allOf:
+        - $ref: "#/components/schemas/FieldInput"
+        - type: object
+          properties:
+            id:
+              type: integer
+            options:
+              type: array
+              items:
+                $ref: "#/components/schemas/OptionResponse"
+
+    EntryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        data:
+          type: object
+          additionalProperties: true
+
+    RelationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        related_collection_id:
+          type: integer
+        relation_type:
+          type: string
+
+    OptionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        value:
+          type: string
+
+    ApiKeyCreateRequest:
+      type: object
+      required: [name, collection_ids]
+      properties:
+        name:
+          type: string
+        collection_ids:
+          type: array
+          items:
+            type: integer
+        ip_whitelist:
+          type: array
+          items:
+            type: string
+        expire_at:
+          type: string
+          format: date-time
+        rate_limit_per_hour:
+          type: integer
+
+    ApiKeyResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        key:
+          type: string
+        ip_whitelist:
+          type: array
+          items:
+            type: string
+        expire_at:
+          type: string
+          format: date-time
+        revoked:
+          type: boolean
+        rate_limit_per_hour:
+          type: integer
+        collection_ids:
+          type: array
+          items:
+            type: integer
+        created_at:
+          type: string
+          format: date-time
