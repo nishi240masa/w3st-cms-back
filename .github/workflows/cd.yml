@@ -1,0 +1,45 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    permissions:
+      id-token: write
+      contents: read
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: awsのOIDC認証を設定
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::236122835491:role/itHubActionsOIDCRole
+          role-duration-seconds: 900
+          aws-region: ap-northeast-1
+
+      - name: アプリケーションコードのビルド
+        working-directory: src
+        run: |
+          GOOS=linux GOARCH=amd64 go build -o main
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and Push Docker image
+        working-directory: build
+        run: |
+          docker build --platform=linux/amd64 -t 236122835491.dkr.ecr.ap-northeast-1.amazonaws.com/w3st:latest .
+          docker push 236122835491.dkr.ecr.ap-northeast-1.amazonaws.com/w3st:latest
+
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster my-cluster \
+            --service my-service \
+            --force-new-deployment
