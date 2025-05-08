@@ -18,7 +18,7 @@ func Init() {
 	// 環境変数 PORT を取得
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080" // デフォルトポート
+		port = "80" // デフォルトポート
 	}
 
 	db := infra.SetupDB()
