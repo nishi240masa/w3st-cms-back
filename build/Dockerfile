@@ -1,14 +1,12 @@
 # 本番用イメージ
 FROM alpine:latest
 
-
 # 作業ディレクトリ
 WORKDIR /root/
 
 # ビルド済みバイナリをコピー
-COPY ./src/main ./
+COPY src/main ./
 RUN chmod +x ./main
-
 
 # 環境変数・ポート設定
 ENV PORT=8080
