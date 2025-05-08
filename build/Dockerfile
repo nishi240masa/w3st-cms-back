@@ -7,7 +7,7 @@ WORKDIR /root/
 
 # ビルド済みバイナリをコピー
 COPY ./src/main ./
-
+RUN chmod +x ./main
 
 
 # 環境変数・ポート設定
