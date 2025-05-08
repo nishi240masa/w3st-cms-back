@@ -9,8 +9,8 @@ COPY src/main ./
 RUN chmod +x ./main
 
 # 環境変数・ポート設定
-ENV PORT=8080
-EXPOSE 8080
+ENV PORT=80
+EXPOSE 80
 
 # アプリケーション起動
 CMD ["./main"]
