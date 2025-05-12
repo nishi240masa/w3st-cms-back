@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"errors"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -95,8 +94,6 @@ func (c *CollectionsController) GetCollectionByUserId(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	log.Default().Println("userUuid:", userUuid)
 
 	// コレクションを取得
 	collection, err := c.collectionUsecase.GetCollectionByUserId(userUuid)
