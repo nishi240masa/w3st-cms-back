@@ -51,7 +51,7 @@ func (r *CollectionsRepository) GetCollectionByUserId(userId uuid.UUID) ([]model
 	return collection, nil
 }
 
-func (r *CollectionsRepository) GetCollectionsByCollectionId(collectionId string, userId uuid.UUID) (*models.ApiCollection, error) {
+func (r *CollectionsRepository) GetCollectionsByCollectionId(collectionId int, userId uuid.UUID) (*models.ApiCollection, error) {
 	var collection models.ApiCollection
 	result := r.db.Where("id = ? AND user_id = ?", collectionId, userId).First(&collection)
 

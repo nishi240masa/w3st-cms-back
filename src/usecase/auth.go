@@ -48,26 +48,30 @@ func (a *jwtAuthUsecase) GenerateToken(userID uuid.UUID) (models.Token, error) {
 
 // トークンを検証し、userIDを取得する
 func (a *jwtAuthUsecase) ValidateToken(token string) (string, error) {
-	parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+	claims := &jwt.MapClaims{}
+	_, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "署名方式が不正です")
 		}
 		return []byte(a.secretKey), nil
-	})
+	}, jwt.WithoutClaimsValidation())
 	if err != nil {
 		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "トークンのパースに失敗しました")
 	}
 
-	if !parsedToken.Valid {
-		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "無効なトークンです")
+	if (*claims)["exp"] != nil {
+		if exp, ok := (*claims)["exp"].(float64); ok {
+			if int64(exp) < time.Now().Unix() {
+				return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "無効なトークンです")
+			}
+		}
 	}
 
-	claims, ok := parsedToken.Claims.(jwt.MapClaims)
-	if !ok || claims["sub"] == nil {
+	if (*claims)["sub"] == nil {
 		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "claimsの取得に失敗しました")
 	}
 
-	subStr, ok := claims["sub"].(string)
+	subStr, ok := (*claims)["sub"].(string)
 	if !ok {
 		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "subの型が不正です")
 	}

@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -114,6 +115,13 @@ func (c *CollectionsController) GetCollectionsByCollectionId(ctx *gin.Context) {
 	// コレクションIDを取得
 	collectionId := ctx.Param("collectionId")
 
+	//　int型に変換
+	collectionIdInt, err := strconv.Atoi(collectionId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Collection ID"})
+		return
+	}
+
 	// userIdを取得
 	// ユーザーIDを取得
 	userID, exists := ctx.Get("userID")
@@ -136,7 +144,7 @@ func (c *CollectionsController) GetCollectionsByCollectionId(ctx *gin.Context) {
 	}
 
 	// コレクションを取得
-	collection, err := c.collectionUsecase.GetCollectionsByCollectionId(collectionId, userUuid)
+	collection, err := c.collectionUsecase.GetCollectionsByCollectionId(collectionIdInt, userUuid)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {

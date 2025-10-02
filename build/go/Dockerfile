@@ -14,7 +14,7 @@ COPY ./src/ ./
 RUN go mod download
 
 # Airをインストール (公式スクリプトを使用)
-RUN go install github.com/air-verse/air@latest
+RUN go install github.com/air-verse/air@v1.61.0
 # デフォルトでポート 4000 を使用
 ENV PORT=8080
 

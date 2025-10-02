@@ -2,16 +2,16 @@
 
 # コンテナ操作
 up: build
-	docker-compose up -d
+	docker compose up -d
 
 build:
-	docker-compose build --no-cache
+	docker compose build --no-cache
 
 down:
-	docker-compose down
+	docker compose down
 
 go:
-	docker-compose exec -it w3st-cms /bin/sh
+	docker compose exec -it w3st-cms /bin/sh
 
 db:
 	docker exec -it ${DB_HOST} psql -U ${DB_USER} -d ${DB_NAME}
