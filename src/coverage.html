@@ -1,0 +1,1215 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>errors: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">w3st/errors/domain_error.go (0.0%)</option>
+				
+				<option value="file1">w3st/infra/db.go (0.0%)</option>
+				
+				<option value="file2">w3st/infra/logger/logger.go (0.0%)</option>
+				
+				<option value="file3">w3st/infra/repository/transaction_impl.go (0.0%)</option>
+				
+				<option value="file4">w3st/infra/repository/user_impl.go (0.0%)</option>
+				
+				<option value="file5">w3st/interfaces/controllers/error_handler.go (0.0%)</option>
+				
+				<option value="file6">w3st/interfaces/controllers/user.go (0.0%)</option>
+				
+				<option value="file7">w3st/interfaces/middlewares/auth.go (0.0%)</option>
+				
+				<option value="file8">w3st/mock/repositories/mock_transaction_repository.go (0.0%)</option>
+				
+				<option value="file9">w3st/mock/repositories/mock_user_repository.go (0.0%)</option>
+				
+				<option value="file10">w3st/mock/services/mock_auth_service.go (0.0%)</option>
+				
+				<option value="file11">w3st/presenter/user.go (0.0%)</option>
+				
+				<option value="file12">w3st/usecase/auth.go (85.2%)</option>
+				
+				<option value="file13">w3st/usecase/user.go (100.0%)</option>
+				
+				<option value="file14">w3st/utils/uuid.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package errors
+
+import (
+        "errors"
+)
+
+type DomainError struct {
+        ErrType ErrorType
+        Err     error
+}
+
+type ErrorType int
+
+const (
+        InvalidParameter ErrorType = iota
+        UnPemitedOperation
+        AlreadyExist
+        RepositoryError
+        QueryError
+        QueryDataNotFoundError
+        ErrorUnknown
+        TransactionError
+)
+
+func (e *DomainError) Error() string <span class="cov0" title="0">{
+        if e == nil </span><span class="cov0" title="0">{
+                return ""
+        }</span>
+        <span class="cov0" title="0">return e.Err.Error()</span>
+}
+
+func (e *DomainError) Unwrap() error <span class="cov0" title="0">{
+        if e == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+        <span class="cov0" title="0">return e.Err</span>
+}
+
+func (e *DomainError) Is(target error) bool <span class="cov0" title="0">{
+        if e == nil || target == nil </span><span class="cov0" title="0">{
+                return false
+        }</span>
+
+        <span class="cov0" title="0">var t *DomainError
+        t, ok := target.(*DomainError)
+        if !ok || t == nil </span><span class="cov0" title="0">{
+                return false
+        }</span>
+
+        <span class="cov0" title="0">return e.ErrType == t.ErrType</span>
+}
+
+func (e *DomainError) GetType() ErrorType <span class="cov0" title="0">{
+        return e.ErrType
+}</span>
+
+func NewDomainError(errType ErrorType, message string) *DomainError <span class="cov0" title="0">{
+        return &amp;DomainError{
+                ErrType: errType,
+                Err:     errors.New(message),
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package infra
+
+import (
+        "fmt"
+        "log"
+        "os"
+
+        "gorm.io/driver/postgres"
+        "gorm.io/gorm"
+)
+
+// SetupDB initializes the database connection and creates tables if they don't exist
+func SetupDB() *gorm.DB <span class="cov0" title="0">{
+        // データソース名を環境変数から取得
+        dsn := fmt.Sprintf(
+                "host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Tokyo",
+                os.Getenv("DB_HOST"),
+                os.Getenv("DB_USER"),
+                os.Getenv("DB_PASSWORD"),
+                os.Getenv("DB_NAME"),
+                os.Getenv("DB_PORT"),
+        )
+
+        // データベースに接続
+        db, err := gorm.Open(postgres.Open(dsn), &amp;gorm.Config{})
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Failed to connect to database: %v", err)
+                panic(err)</span>
+        }
+
+        // すでにマイグレーション済みかチェック (users テーブルがあるか確認)
+        <span class="cov0" title="0">var exists bool
+        checkSQL := `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users');`
+        if err := db.Raw(checkSQL).Scan(&amp;exists).Error; err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Failed to check existing tables: %v", err)
+        }</span>
+
+        // すでにテーブルがある場合はマイグレーションをスキップ
+        <span class="cov0" title="0">if exists </span><span class="cov0" title="0">{
+                log.Println("Database schema already exists. Skipping migration.")
+                return db
+        }</span>
+
+        <span class="cov0" title="0">log.Println("Running database migrations...")
+
+        // マイグレーション
+        initSQL := `
+        CREATE TABLE IF NOT EXISTS users (
+                id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(100) NOT NULL,
+                role VARCHAR(50) DEFAULT 'user',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS apiSchema (
+                id SERIAL PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                field_id VARCHAR(100) NOT NULL,
+                view_name VARCHAR(100) NOT NULL,
+                field_type VARCHAR(50) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS field_data (
+                id SERIAL PRIMARY KEY,
+                apiSchema_id INT NOT NULL REFERENCES apiSchema(id) ON DELETE CASCADE,
+                field_type VARCHAR(50) NOT NULL,
+                field_value JSONB,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS list_options (
+                id SERIAL PRIMARY KEY,
+                apiSchema_id INT NOT NULL REFERENCES apiSchema(id) ON DELETE CASCADE,
+                value VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS api_kind_relation (
+                id SERIAL PRIMARY KEY,
+                apiSchema_id INT NOT NULL REFERENCES apiSchema(id) ON DELETE CASCADE,
+                related_id INT NOT NULL REFERENCES apiSchema(id) ON DELETE CASCADE,
+                relation_type VARCHAR(50) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- トリガー関数の作成 (IF NOT EXISTS はトリガー関数には使えないので、関数がすでに存在するかチェック)
+        DO $$ BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'cascade_delete_apiSchema') THEN
+                        CREATE OR REPLACE FUNCTION cascade_delete_apiSchema()
+                        RETURNS TRIGGER AS $$
+                        BEGIN
+                                DELETE FROM field_data WHERE apiSchema_id = OLD.id;
+                                DELETE FROM list_options WHERE apiSchema_id = OLD.id;
+                                DELETE FROM api_kind_relation WHERE apiSchema_id = OLD.id OR related_id = OLD.id;
+                                RETURN OLD;
+                        END;
+                        $$ LANGUAGE plpgsql;
+                END IF;
+        END $$;
+
+        DO $$ BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'validate_list_options') THEN
+                        CREATE OR REPLACE FUNCTION validate_list_options()
+                        RETURNS TRIGGER AS $$
+                        DECLARE
+                                schema_type VARCHAR(50);
+                        BEGIN
+                                SELECT field_type INTO schema_type FROM apiSchema WHERE id = NEW.apiSchema_id;
+                                IF schema_type NOT IN ('select', 'dropdown') THEN
+                                        RAISE EXCEPTION 'list_options can only be added to select or dropdown fields';
+                                END IF;
+                                RETURN NEW;
+                        END;
+                        $$ LANGUAGE plpgsql;
+                END IF;
+        END $$;
+
+        DO $$ BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'check_cyclic_relation') THEN
+                        CREATE OR REPLACE FUNCTION check_cyclic_relation()
+                        RETURNS TRIGGER AS $$
+                        DECLARE
+                                is_cyclic BOOLEAN;
+                        BEGIN
+                                WITH RECURSIVE relation_path AS (
+                                        SELECT related_id FROM api_kind_relation WHERE apiSchema_id = NEW.related_id
+                                        UNION ALL
+                                        SELECT r.related_id FROM api_kind_relation r INNER JOIN relation_path rp ON rp.related_id = r.apiSchema_id
+                                )
+                                SELECT EXISTS (SELECT 1 FROM relation_path WHERE related_id = NEW.apiSchema_id) INTO is_cyclic;
+                                IF is_cyclic THEN
+                                        RAISE EXCEPTION 'Cyclic relation detected';
+                                END IF;
+                                RETURN NEW;
+                        END;
+                        $$ LANGUAGE plpgsql;
+                END IF;
+        END $$;
+
+        -- 各テーブルのトリガー設定
+        CREATE TRIGGER IF NOT EXISTS delete_related_data
+        AFTER DELETE ON apiSchema
+        FOR EACH ROW EXECUTE FUNCTION cascade_delete_apiSchema();
+
+        CREATE TRIGGER IF NOT EXISTS validate_options
+        BEFORE INSERT ON list_options
+        FOR EACH ROW EXECUTE FUNCTION validate_list_options();
+
+        CREATE TRIGGER IF NOT EXISTS prevent_cyclic_relation
+        BEFORE INSERT ON api_kind_relation
+        FOR EACH ROW EXECUTE FUNCTION check_cyclic_relation();
+        `
+
+        // SQL実行
+        if err := db.Exec(initSQL).Error; err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Error executing initSQL: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">log.Println("Database migration completed successfully.")
+        return db</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package logger
+
+import (
+        "log/slog"
+        "os"
+)
+
+// グローバルで使用できるLogger
+var Logger *slog.Logger
+
+// init
+func init() <span class="cov0" title="0">{
+        // json形式でログを出力する
+        handler := slog.NewJSONHandler(os.Stdout, &amp;slog.HandlerOptions{
+                Level: slog.LevelInfo, // Infoレベル以上を出力
+        })
+        Logger = slog.New(handler)
+}</span>
+
+// 情報ログを出力
+func Info(msg string, keysAndValues ...interface{}) <span class="cov0" title="0">{
+        Logger.Info(msg, keysAndValues...)
+}</span>
+
+// errorログを出力
+func Error(msg string, keysAndValues ...interface{}) <span class="cov0" title="0">{
+        Logger.Error(msg, keysAndValues...)
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package infrastructure
+
+import (
+        "context"
+        "fmt"
+
+        "w3st/domain/repositories"
+        "w3st/errors"
+
+        "gorm.io/gorm"
+)
+
+type TransactionRepositoryImpl struct {
+        DB *gorm.DB
+}
+
+func NewTransactionRepositoryImpl(db *gorm.DB) repositories.TransactionRepository <span class="cov0" title="0">{
+        return &amp;TransactionRepositoryImpl{DB: db}
+}</span>
+
+type contextKey string
+
+const txKey contextKey = "tx"
+
+func (t *TransactionRepositoryImpl) Do(ctx context.Context, f func(ctx context.Context) error) error <span class="cov0" title="0">{
+        // すでにトランザクションが開始されている時はそれを使用する
+        if existingTx := ctx.Value(txKey); existingTx != nil </span><span class="cov0" title="0">{
+                return f(ctx)
+        }</span>
+
+        // この関数は、トランザクションを開始し、f関数を実行します。
+        <span class="cov0" title="0">err := t.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error </span><span class="cov0" title="0">{
+                //　トランザクション内でpanicが発生した場合、ロールバックを行う
+                defer func() </span><span class="cov0" title="0">{
+                        if r := recover(); r != nil </span><span class="cov0" title="0">{
+                                tx.Rollback()
+                                // panicの内容をエラーメッセージとして返す
+                                err := errors.NewDomainError(errors.TransactionError, "トランザクション中にpanicが発生しました: "+fmt.Sprintf("%v", r))
+                                // panicの内容をエラーメッセージとして返す
+                                panic(err)</span>
+                        }
+                }()
+
+                // トランザクションのコンテキストを作成
+                <span class="cov0" title="0">txCtx := context.WithValue(ctx, txKey, tx)
+
+                // トランザクションのコンテキストをf関数に渡す
+                if err := f(txCtx); err != nil </span><span class="cov0" title="0">{
+                        // エラーが発生した場合、トランザクションをロールバック
+                        if rollbackErr := tx.Rollback().Error; rollbackErr != nil </span><span class="cov0" title="0">{
+                                // ロールバックに失敗した場合、エラーメッセージを返す
+                                return errors.NewDomainError(errors.TransactionError, "トランザクションのロールバックに失敗しました: "+rollbackErr.Error())
+                        }</span>
+                        // ロールバックに成功した場合、エラーメッセージを返す
+                        <span class="cov0" title="0">return errors.NewDomainError(errors.TransactionError, "トランザクション中にエラーが発生しました: "+err.Error())</span>
+                }
+                // エラーが発生しなかった場合、トランザクションをコミット
+                <span class="cov0" title="0">return nil</span>
+        })
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                // トランザクションのコミットに失敗した場合、エラーメッセージを返す
+                return errors.NewDomainError(errors.TransactionError, "トランザクションのコミットに失敗しました: "+err.Error())
+        }</span>
+        // トランザクションのコミットに成功した場合、nilを返す
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package infrastructure
+
+import (
+        "context"
+        "errors"
+        "fmt"
+
+        "w3st/domain/models"
+        "w3st/domain/repositories"
+        myerrors "w3st/errors"
+
+        "gorm.io/gorm"
+)
+
+type UserRepositoryImpl struct {
+        db *gorm.DB
+}
+
+func NewUserRepositoryImpl(db *gorm.DB) repositories.UserRepository <span class="cov0" title="0">{
+        return &amp;UserRepositoryImpl{db: db}
+}</span>
+
+// Create
+func (r *UserRepositoryImpl) Create(ctx context.Context, newUser *models.Users) *myerrors.DomainError <span class="cov0" title="0">{ // context を引数に追加
+        result := r.db.WithContext(ctx).Create(newUser)
+
+        if result.Error != nil </span><span class="cov0" title="0">{
+                // クエリの実行中に発生したエラー
+
+                return myerrors.NewDomainError(myerrors.QueryError, result.Error.Error())
+        }</span>
+        // ユーザーの作成に成功した場合
+        <span class="cov0" title="0">return nil</span>
+}
+
+// Find
+func (r *UserRepositoryImpl) FindByEmail(ctx context.Context, email string) (*models.Users, *myerrors.DomainError) <span class="cov0" title="0">{
+        var user models.Users
+        result := r.db.WithContext(ctx).Where("email = ?", email).First(&amp;user)
+
+        // エラーが発生した場合
+        if result.Error != nil </span><span class="cov0" title="0">{
+                if errors.Is(result.Error, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return &amp;user, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, "ユーザーが見つかりません")
+                }</span>
+                // その他のエラー
+                <span class="cov0" title="0">fmt.Println("その他のエラー:", result.Error)
+                return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error.Error())</span>
+        }
+
+        <span class="cov0" title="0">return &amp;user, nil</span>
+}
+
+// FindByID
+func (r *UserRepositoryImpl) FindByID(ctx context.Context, userID string) (*models.Users, *myerrors.DomainError) <span class="cov0" title="0">{
+        var user models.Users
+        result := r.db.WithContext(ctx).Where("id = ?", userID).First(&amp;user)
+
+        // エラーが発生した場合
+        if result.Error != nil </span><span class="cov0" title="0">{
+                if errors.Is(result.Error, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return &amp;user, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, "ユーザーが見つかりません")
+                }</span>
+                // その他のエラー
+                <span class="cov0" title="0">fmt.Println("その他のエラー:", result.Error)
+                return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error.Error())</span>
+        }
+
+        <span class="cov0" title="0">return &amp;user, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package controllers
+
+import (
+        "errors"
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+
+        myerrors "w3st/errors"
+        "w3st/infra/logger"
+
+        "github.com/bufbuild/connect-go"
+)
+
+func ErrorHandle(domainErr *myerrors.DomainError) *connect.Error <span class="cov0" title="0">{
+        switch domainErr.ErrType </span>{
+        // 技術的なエラー
+        case myerrors.InvalidParameter:<span class="cov0" title="0">
+                return connect.NewError(connect.CodeInvalidArgument, domainErr)</span>
+                // ビジネスロジックエラー
+        case myerrors.UnPemitedOperation:<span class="cov0" title="0">
+                return connect.NewError(connect.CodePermissionDenied, domainErr)</span>
+                // 既に存在するエラー
+        case myerrors.AlreadyExist:<span class="cov0" title="0">
+                return connect.NewError(connect.CodeAlreadyExists, domainErr)</span>
+                // リポジトリで技術的なエラーが発生した場合
+        case myerrors.RepositoryError, myerrors.QueryError:<span class="cov0" title="0">
+                logger.Error(domainErr.Error())
+                return connect.NewError(connect.CodeInternal, domainErr)</span>
+                // ユーザーが見つからなかった場合
+        case myerrors.QueryDataNotFoundError:<span class="cov0" title="0">
+                logger.Error(domainErr.Error())
+                return connect.NewError(connect.CodeNotFound, domainErr)</span>
+                // トランザクションエラー
+        case myerrors.TransactionError:<span class="cov0" title="0">
+                logger.Error(domainErr.Error())
+                return connect.NewError(connect.CodeInternal, domainErr)</span>
+                // その他のエラー
+        default:<span class="cov0" title="0">
+                logger.Error(domainErr.Error())
+                return connect.NewError(connect.CodeUnknown, domainErr)</span>
+        }
+}
+
+// 補助関数例: connect.Error のコードをHTTPステータスコードに変換する
+func HttpStatusCodeFromConnectCode(code connect.Code) int <span class="cov0" title="0">{
+        switch code </span>{
+        case connect.CodeInvalidArgument:<span class="cov0" title="0">
+                return http.StatusBadRequest</span>
+        case connect.CodePermissionDenied:<span class="cov0" title="0">
+                return http.StatusForbidden</span>
+        case connect.CodeAlreadyExists:<span class="cov0" title="0">
+                return http.StatusConflict</span>
+        case connect.CodeInternal:<span class="cov0" title="0">
+                return http.StatusInternalServerError</span>
+        case connect.CodeNotFound:<span class="cov0" title="0">
+                return http.StatusNotFound</span>
+        default:<span class="cov0" title="0">
+                return http.StatusInternalServerError</span>
+        }
+}
+
+// handlerのエラーハンドリング
+func ErrorHandler(c *gin.Context, err error) <span class="cov0" title="0">{
+        // エラーが connect.Error 型かどうかを確認
+        var domainErr *myerrors.DomainError
+        if errors.As(err, &amp;domainErr) </span><span class="cov0" title="0">{
+                // connect.Error に変換
+                connectErr := ErrorHandle(domainErr)
+
+                // HTTP ステータスコードを取得
+                httpStatusCode := HttpStatusCodeFromConnectCode(connectErr.Code())
+
+                // レスポンスを返す
+                c.JSON(httpStatusCode, gin.H{"error": connectErr.Message()})
+        }</span> else<span class="cov0" title="0"> {
+                // その他のエラーは500 Internal Server Errorとして処理
+                c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package controllers
+
+import (
+        "errors"
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+
+        "w3st/domain/models"
+        "w3st/dto"
+        myerrors "w3st/errors"
+        "w3st/presenter"
+        "w3st/usecase"
+)
+
+type UserController struct {
+        userUsecase    usecase.UserUsecase
+        jwtAuthUsecase usecase.JwtUsecase
+        userPresenter  presenter.UserPresenter
+}
+
+func NewUserController(userUsecase usecase.UserUsecase, jwtAuthUsecase usecase.JwtUsecase, userPresenter presenter.UserPresenter) *UserController <span class="cov0" title="0">{
+        return &amp;UserController{
+                userUsecase:    userUsecase,
+                jwtAuthUsecase: jwtAuthUsecase,
+                userPresenter:  userPresenter,
+        }
+}</span>
+
+func (c *UserController) Signup(ctx *gin.Context) <span class="cov0" title="0">{
+        var input dto.SignupData
+
+        // リクエストのバインド
+        if err := ctx.ShouldBindJSON(&amp;input); err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        <span class="cov0" title="0">newUser := &amp;models.Users{
+                Name:     input.Name,
+                Email:    input.Email,
+                Password: input.Password,
+        }
+
+        // ユーザー登録
+        newUser, err := c.userUsecase.Create(newUser, ctx.Request.Context())
+        if err != nil </span><span class="cov0" title="0">{
+                var domainErr *myerrors.DomainError
+                if errors.As(err, &amp;domainErr) </span><span class="cov0" title="0">{
+                        ErrorHandler(ctx, err)
+                        return
+                }</span>
+                // その他のエラー
+                <span class="cov0" title="0">ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})</span>
+        }
+
+        // トークン生成
+        <span class="cov0" title="0">token, err := c.jwtAuthUsecase.GenerateToken(newUser.ID)
+        if err != nil </span><span class="cov0" title="0">{
+                var domainErr *myerrors.DomainError
+                if errors.As(err, &amp;domainErr) </span><span class="cov0" title="0">{
+                        ErrorHandler(ctx, err)
+                        return
+                }</span>
+                // その他のエラー
+                <span class="cov0" title="0">ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})</span>
+        }
+
+        // jwtトークンをクライアントに返す
+        <span class="cov0" title="0">ctx.JSON(http.StatusOK, gin.H{"token": token})</span>
+}
+
+func (c *UserController) Login(ctx *gin.Context) <span class="cov0" title="0">{
+        var input dto.LoginData
+
+        // リクエストのバインド
+        if err := ctx.ShouldBindJSON(&amp;input); err != nil </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
+        }</span>
+
+        // ログイン
+        <span class="cov0" title="0">user, err := c.userUsecase.FindByEmail(input.Email)
+        if err != nil </span><span class="cov0" title="0">{
+                var domainErr *myerrors.DomainError
+                if errors.As(err, &amp;domainErr) </span><span class="cov0" title="0">{
+                        ErrorHandler(ctx, err)
+                        return
+                }</span>
+                <span class="cov0" title="0">ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+                return</span>
+        }
+        //        token生成
+        <span class="cov0" title="0">token, err := c.jwtAuthUsecase.GenerateToken(user.ID)
+        if err != nil </span><span class="cov0" title="0">{
+                var domainErr *myerrors.DomainError
+                if errors.As(err, &amp;domainErr) </span><span class="cov0" title="0">{
+                        ErrorHandler(ctx, err)
+                        return
+                }</span>
+                <span class="cov0" title="0">ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+                return</span>
+        }
+        // jwtトークンをクライアントに返す
+        <span class="cov0" title="0">ctx.JSON(http.StatusOK, gin.H{"token": token})</span>
+}
+
+func (c *UserController) GetUserInfo(ctx *gin.Context) <span class="cov0" title="0">{
+        userID, exists := ctx.Get("userID")
+        if !exists </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+                return
+        }</span>
+
+        // ユーザー情報の取得
+        // userIDはstring型であることを確認
+        <span class="cov0" title="0">userIDStr, ok := userID.(string)
+        if !ok </span><span class="cov0" title="0">{
+                ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+                return
+        }</span>
+
+        <span class="cov0" title="0">user, err := c.userUsecase.FindByID(userIDStr)
+        if err != nil </span><span class="cov0" title="0">{
+                var domainErr *myerrors.DomainError
+                if errors.As(err, &amp;domainErr) </span><span class="cov0" title="0">{
+                        ErrorHandler(ctx, err)
+                        return
+                }</span>
+                <span class="cov0" title="0">ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+                return</span>
+        }
+        <span class="cov0" title="0">ctx.JSON(http.StatusOK, gin.H{"user": user})</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package middlewares
+
+import (
+        "errors"
+        "net/http"
+        "strings"
+
+        "w3st/usecase"
+
+        myerrors "w3st/errors"
+        "w3st/interfaces/controllers"
+
+        "github.com/gin-gonic/gin"
+)
+
+func JwtAuthMiddleware(authUsecase usecase.JwtUsecase) gin.HandlerFunc <span class="cov0" title="0">{
+        return func(c *gin.Context) </span><span class="cov0" title="0">{
+                // tokenをヘッダーから取得
+                authHeader := c.Request.Header.Get("Authorization")
+                token := strings.TrimPrefix(authHeader, "Bearer ")
+
+                // tokenの存在を確認
+                if token == "" </span><span class="cov0" title="0">{
+                        c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
+                        c.Abort()
+                        return
+                }</span>
+
+                //　tokenの検証
+                <span class="cov0" title="0">userID, err := authUsecase.ValidateToken(token)
+                if err != nil </span><span class="cov0" title="0">{
+                        domainErr := &amp;myerrors.DomainError{}
+                        if errors.As(err, &amp;domainErr) </span><span class="cov0" title="0">{
+                                err := controllers.ErrorHandle(domainErr)
+                                c.JSON(controllers.HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
+                                c.Abort()
+                                return
+                        }</span>
+                }
+                // tokenの検証に成功した場合、userIDをコンテキストに保存
+                <span class="cov0" title="0">c.Set("userID", userID)
+
+                // tokenが有効な場合、次のハンドラーに進む
+                c.Next()</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">// Code generated by MockGen. DO NOT EDIT.
+// Source: src/domain/repositories/transaction.go
+
+// Package mock_repositories is a generated GoMock package.
+package mock_repositories
+
+import (
+        context "context"
+        reflect "reflect"
+
+        gomock "github.com/golang/mock/gomock"
+)
+
+// MockTransactionRepository is a mock of TransactionRepository interface.
+type MockTransactionRepository struct {
+        ctrl     *gomock.Controller
+        recorder *MockTransactionRepositoryMockRecorder
+}
+
+// MockTransactionRepositoryMockRecorder is the mock recorder for MockTransactionRepository.
+type MockTransactionRepositoryMockRecorder struct {
+        mock *MockTransactionRepository
+}
+
+// NewMockTransactionRepository creates a new mock instance.
+func NewMockTransactionRepository(ctrl *gomock.Controller) *MockTransactionRepository <span class="cov0" title="0">{
+        mock := &amp;MockTransactionRepository{ctrl: ctrl}
+        mock.recorder = &amp;MockTransactionRepositoryMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTransactionRepository) EXPECT() *MockTransactionRepositoryMockRecorder <span class="cov0" title="0">{
+        return m.recorder
+}</span>
+
+// Do mocks base method.
+func (m *MockTransactionRepository) Do(ctx context.Context, f func(context.Context) error) error <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Do", ctx, f)
+        ret0, _ := ret[0].(error)
+        return ret0
+}</span>
+
+// Do indicates an expected call of Do.
+func (mr *MockTransactionRepositoryMockRecorder) Do(ctx, f interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockTransactionRepository)(nil).Do), ctx, f)
+}</span>
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">// Code generated by MockGen. DO NOT EDIT.
+// Source: src/domain/repositories/users.go
+
+// Package mock_repositories is a generated GoMock package.
+package mock_repositories
+
+import (
+        context "context"
+        reflect "reflect"
+        models "w3st/domain/models"
+        errors "w3st/errors"
+
+        gomock "github.com/golang/mock/gomock"
+)
+
+// MockUserRepository is a mock of UserRepository interface.
+type MockUserRepository struct {
+        ctrl     *gomock.Controller
+        recorder *MockUserRepositoryMockRecorder
+}
+
+// MockUserRepositoryMockRecorder is the mock recorder for MockUserRepository.
+type MockUserRepositoryMockRecorder struct {
+        mock *MockUserRepository
+}
+
+// NewMockUserRepository creates a new mock instance.
+func NewMockUserRepository(ctrl *gomock.Controller) *MockUserRepository <span class="cov0" title="0">{
+        mock := &amp;MockUserRepository{ctrl: ctrl}
+        mock.recorder = &amp;MockUserRepositoryMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockUserRepository) EXPECT() *MockUserRepositoryMockRecorder <span class="cov0" title="0">{
+        return m.recorder
+}</span>
+
+// Create mocks base method.
+func (m *MockUserRepository) Create(ctx context.Context, newUser *models.Users) *errors.DomainError <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Create", ctx, newUser)
+        ret0, _ := ret[0].(*errors.DomainError)
+        return ret0
+}</span>
+
+// Create indicates an expected call of Create.
+func (mr *MockUserRepositoryMockRecorder) Create(ctx, newUser interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUserRepository)(nil).Create), ctx, newUser)
+}</span>
+
+// FindByEmail mocks base method.
+func (m *MockUserRepository) FindByEmail(ctx context.Context, email string) (*models.Users, *errors.DomainError) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "FindByEmail", ctx, email)
+        ret0, _ := ret[0].(*models.Users)
+        ret1, _ := ret[1].(*errors.DomainError)
+        return ret0, ret1
+}</span>
+
+// FindByEmail indicates an expected call of FindByEmail.
+func (mr *MockUserRepositoryMockRecorder) FindByEmail(ctx, email interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByEmail", reflect.TypeOf((*MockUserRepository)(nil).FindByEmail), ctx, email)
+}</span>
+
+// FindByID mocks base method.
+func (m *MockUserRepository) FindByID(ctx context.Context, userID string) (*models.Users, *errors.DomainError) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "FindByID", ctx, userID)
+        ret0, _ := ret[0].(*models.Users)
+        ret1, _ := ret[1].(*errors.DomainError)
+        return ret0, ret1
+}</span>
+
+// FindByID indicates an expected call of FindByID.
+func (mr *MockUserRepositoryMockRecorder) FindByID(ctx, userID interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockUserRepository)(nil).FindByID), ctx, userID)
+}</span>
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">// Code generated by MockGen. DO NOT EDIT.
+// Source: src/interfaces/services/auth.go
+
+// Package mock_services is a generated GoMock package.
+package mock_services
+
+import (
+        reflect "reflect"
+
+        models "w3st/domain/models"
+        errors "w3st/errors"
+
+        gomock "github.com/golang/mock/gomock"
+        uuid "github.com/google/uuid"
+)
+
+// MockAuthService is a mock of AuthService interface.
+type MockAuthService struct {
+        ctrl     *gomock.Controller
+        recorder *MockAuthServiceMockRecorder
+}
+
+// MockAuthServiceMockRecorder is the mock recorder for MockAuthService.
+type MockAuthServiceMockRecorder struct {
+        mock *MockAuthService
+}
+
+// NewMockAuthService creates a new mock instance.
+func NewMockAuthService(ctrl *gomock.Controller) *MockAuthService <span class="cov0" title="0">{
+        mock := &amp;MockAuthService{ctrl: ctrl}
+        mock.recorder = &amp;MockAuthServiceMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockAuthService) EXPECT() *MockAuthServiceMockRecorder <span class="cov0" title="0">{
+        return m.recorder
+}</span>
+
+// GenerateToken mocks base method.
+func (m *MockAuthService) GenerateToken(userID uuid.UUID) (models.Token, *errors.DomainError) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "GenerateToken", userID)
+        ret0, _ := ret[0].(models.Token)
+        ret1, _ := ret[1].(*errors.DomainError)
+        return ret0, ret1
+}</span>
+
+// GenerateToken indicates an expected call of GenerateToken.
+func (mr *MockAuthServiceMockRecorder) GenerateToken(userID interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateToken", reflect.TypeOf((*MockAuthService)(nil).GenerateToken), userID)
+}</span>
+
+// ValidateToken mocks base method.
+func (m *MockAuthService) ValidateToken(token string) (string, *errors.DomainError) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "ValidateToken", token)
+        ret0, _ := ret[0].(string)
+        ret1, _ := ret[1].(*errors.DomainError)
+        return ret0, ret1
+}</span>
+
+// ValidateToken indicates an expected call of ValidateToken.
+func (mr *MockAuthServiceMockRecorder) ValidateToken(token interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateToken", reflect.TypeOf((*MockAuthService)(nil).ValidateToken), token)
+}</span>
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package presenter
+
+import (
+        "w3st/domain/models"
+
+        "github.com/google/uuid"
+)
+
+type UserResponse struct {
+        ID    uuid.UUID `json:"id"`
+        Name  string    `json:"name"`
+        Email string    `json:"email"`
+        Role  string    `json:"role"`
+}
+
+type UserPresenter interface {
+        ResponseUser(user *models.Users) *UserResponse
+}
+
+type userPresenter struct{}
+
+func NewUserPresenter() UserPresenter <span class="cov0" title="0">{
+        return &amp;userPresenter{}
+}</span>
+
+func (u *userPresenter) ResponseUser(user *models.Users) *UserResponse <span class="cov0" title="0">{
+        return &amp;UserResponse{
+                ID:    user.ID,
+                Name:  user.Name,
+                Email: user.Email,
+                Role:  user.Role,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package usecase
+
+import (
+        "os"
+        "time"
+
+        "github.com/golang-jwt/jwt/v5"
+        "github.com/google/uuid"
+
+        "w3st/domain/models"
+        "w3st/errors"
+)
+
+type JwtUsecase interface {
+        GenerateToken(userID uuid.UUID) (models.Token, error)
+        ValidateToken(token string) (string, error)
+}
+
+type jwtAuthUsecase struct {
+        secretKey string
+}
+
+func NewjwtAuthUsecase() JwtUsecase <span class="cov8" title="1">{
+        secret := os.Getenv("SECRET_KEY")
+        if len(secret) &lt; 32 </span><span class="cov0" title="0">{
+                panic("SECRET_KEY must be at least 32 bytes long")</span>
+        }
+        <span class="cov8" title="1">return &amp;jwtAuthUsecase{
+                secretKey: secret,
+        }</span>
+}
+
+// トークンを生成する
+func (a *jwtAuthUsecase) GenerateToken(userID uuid.UUID) (models.Token, error) <span class="cov8" title="1">{
+        claims := jwt.MapClaims{
+                "sub": userID.String(),
+                "exp": time.Now().Add(24 * time.Hour).Unix(),
+        }
+        token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+        signedToken, err := token.SignedString([]byte(a.secretKey))
+        if err != nil </span><span class="cov0" title="0">{
+                return "", errors.NewDomainError(errors.ErrorUnknown, "トークンの生成に失敗しました")
+        }</span>
+
+        <span class="cov8" title="1">return models.Token(signedToken), nil</span>
+}
+
+// トークンを検証し、userIDを取得する
+func (a *jwtAuthUsecase) ValidateToken(token string) (string, error) <span class="cov8" title="1">{
+        parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) </span><span class="cov8" title="1">{
+                if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok </span><span class="cov0" title="0">{
+                        return nil, errors.NewDomainError(errors.ErrorUnknown, "署名方式が不正です")
+                }</span>
+                <span class="cov8" title="1">return []byte(a.secretKey), nil</span>
+        })
+        <span class="cov8" title="1">if err != nil </span><span class="cov8" title="1">{
+                return "", errors.NewDomainError(errors.ErrorUnknown, "トークンのパースに失敗しました")
+        }</span>
+
+        <span class="cov8" title="1">if !parsedToken.Valid </span><span class="cov0" title="0">{
+                return "", errors.NewDomainError(errors.ErrorUnknown, "無効なトークンです")
+        }</span>
+
+        <span class="cov8" title="1">claims, ok := parsedToken.Claims.(jwt.MapClaims)
+        if !ok || claims["sub"] == nil </span><span class="cov8" title="1">{
+                return "", errors.NewDomainError(errors.ErrorUnknown, "claimsの取得に失敗しました")
+        }</span>
+
+        <span class="cov8" title="1">subStr, ok := claims["sub"].(string)
+        if !ok </span><span class="cov8" title="1">{
+                return "", errors.NewDomainError(errors.ErrorUnknown, "subの型が不正です")
+        }</span>
+
+        <span class="cov8" title="1">if _, err := uuid.Parse(subStr); err != nil </span><span class="cov8" title="1">{
+                return "", errors.NewDomainError(errors.ErrorUnknown, "UUIDのパースに失敗しました")
+        }</span>
+
+        <span class="cov8" title="1">return subStr, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package usecase
+
+import (
+        "context" // context をインポート
+        "errors"
+
+        "w3st/domain/models"
+        "w3st/domain/repositories"
+        myerrors "w3st/errors"
+)
+
+type UserUsecase interface {
+        Create(newUser *models.Users, ctx context.Context) (*models.Users, error)
+        FindByEmail(email string) (*models.Users, error)
+        FindByID(userID string) (*models.Users, error)
+}
+
+type userUsecase struct {
+        userRepo repositories.UserRepository
+}
+
+func NewUserUsecase(userRepo repositories.UserRepository) UserUsecase <span class="cov8" title="1">{
+        return &amp;userUsecase{
+                userRepo: userRepo,
+        }
+}</span>
+
+func (u *userUsecase) Create(newUser *models.Users, ctx context.Context) (*models.Users, error) <span class="cov8" title="1">{
+        // すでに存在するか確認
+        _, err := u.userRepo.FindByEmail(ctx, newUser.Email)
+        if err != nil </span><span class="cov8" title="1">{
+                // ユーザーが存在しない場合
+                if errors.Is(err, &amp;myerrors.DomainError{ErrType: myerrors.QueryDataNotFoundError}) </span><span class="cov8" title="1">{
+                        if err := u.userRepo.Create(ctx, newUser); err != nil </span><span class="cov8" title="1">{
+                                return nil, myerrors.NewDomainError(myerrors.QueryError, err.Error())
+                        }</span>
+                        <span class="cov8" title="1">return newUser, nil</span>
+                }
+                // それ以外のエラー（DB障害など）
+                <span class="cov8" title="1">return nil, myerrors.NewDomainError(myerrors.QueryError, err.Error())</span>
+        }
+
+        // ユーザーがすでに存在していた場合
+        <span class="cov8" title="1">return nil, myerrors.NewDomainError(myerrors.AlreadyExist, "このメールアドレスは既に登録されています")</span>
+}
+
+func (u *userUsecase) FindByEmail(email string) (*models.Users, error) <span class="cov8" title="1">{
+        user, err := u.userRepo.FindByEmail(context.Background(), email)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return user, nil</span>
+}
+
+func (u *userUsecase) FindByID(userID string) (*models.Users, error) <span class="cov8" title="1">{
+        user, err := u.userRepo.FindByID(context.Background(), userID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return user, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package utils
+
+import (
+        "w3st/errors"
+
+        "github.com/google/uuid"
+)
+
+func StringToUUID(s string) (uuid.UUID, error) <span class="cov0" title="0">{
+        id, err := uuid.Parse(s)
+        if err != nil </span><span class="cov0" title="0">{
+                return uuid.Nil, errors.NewDomainError(errors.InvalidParameter, "invalid uuid")
+        }</span>
+        <span class="cov0" title="0">return id, nil</span>
+}
+
+func UuidToString(id uuid.UUID) string <span class="cov0" title="0">{
+        return id.String()
+}</span>
+
+func UuidToUint(id uuid.UUID) (uint, error) <span class="cov0" title="0">{
+        var uintID uint
+
+        for i := 0; i &lt; len(id); i++ </span><span class="cov0" title="0">{
+                uintID += uint(id[i])
+        }</span>
+
+        <span class="cov0" title="0">return uintID, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

@@ -11,15 +11,12 @@ import (
 
 // SetupDB initializes the database connection and creates tables if they don't exist
 func SetupDB() *gorm.DB {
-
 	sslmode := "require"
 
 	// local環境での接続設定
 	if os.Getenv("DB_HOST") == "posttgresql-db" {
-
 		//	sslmodeを無効にする
 		sslmode = "disable"
-
 	}
 
 	dsn := fmt.Sprintf(

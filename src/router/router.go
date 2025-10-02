@@ -52,6 +52,8 @@ func Init() {
 	// Collections
 	collections := r.Group("/collections")
 	collectionController := f.InitCollectionController()
+	// Fields
+	fieldController := f.InitFieldController()
 
 	// ユーザー登録
 	users.POST("/signup", userController.Signup)
@@ -69,6 +71,11 @@ func Init() {
 	collections.GET("", middlewares.JwtAuthMiddleware(authUsecase), collectionController.GetCollectionByUserId)
 
 	// Collectionを取得
+	// Fields
+	fields := collections.Group("/:collectionId/fields")
+	fields.POST("", middlewares.JwtAuthMiddleware(authUsecase), fieldController.Create)
+	fields.PUT("/:fieldId", middlewares.JwtAuthMiddleware(authUsecase), fieldController.Update)
+	fields.DELETE("/:fieldId", middlewares.JwtAuthMiddleware(authUsecase), fieldController.Delete)
 	collections.GET("/:collectionId", middlewares.JwtAuthMiddleware(authUsecase), collectionController.GetCollectionsByCollectionId)
 
 	// 指定されたポートでサーバーを開始

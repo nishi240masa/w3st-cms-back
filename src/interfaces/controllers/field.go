@@ -1,0 +1,205 @@
+package controllers
+
+import (
+	"errors"
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+
+	"w3st/domain/models"
+	"w3st/dto"
+	myerrors "w3st/errors"
+	"w3st/usecase"
+	"w3st/utils"
+)
+
+type FieldController struct {
+	fieldUsecase usecase.FieldUsecase
+}
+
+func NewFieldController(fieldUsecase usecase.FieldUsecase) *FieldController {
+	return &FieldController{
+		fieldUsecase: fieldUsecase,
+	}
+}
+
+func (f *FieldController) Create(ctx *gin.Context) {
+	// パラメータから取得
+	collectionId := ctx.Param("collectionId")
+	if collectionId == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Collection ID is required"})
+		return
+	}
+	// int型に変換
+	collectionIdInt, err := strconv.Atoi(collectionId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Collection ID"})
+		return
+	}
+
+	//　userID
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	// userIDはstring型であることを確認
+	userIDStr, ok := userID.(string)
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	userUuid, err := utils.StringToUUID(userIDStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// リクエストのバインド
+	var input dto.CreateField
+	if err := ctx.ShouldBindJSON(&input); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// フィールドの作成
+	newField := &models.FieldData{
+		CollectionID: collectionIdInt,
+		FieldID:      input.FieldID,
+		ViewName:     input.ViewName,
+		FieldType:    input.FieldType,
+		IsRequired:   input.IsRequired,
+		DefaultValue: input.DefaultValue,
+	}
+
+	err = f.fieldUsecase.Create(userUuid, newField)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	// レスポンスを返
+	ctx.JSON(http.StatusOK, gin.H{"message": "Field created successfully"})
+}
+
+func (f *FieldController) Update(ctx *gin.Context) {
+	// フィールドIDを取得
+	fieldId := ctx.Param("fieldId")
+	if fieldId == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Field ID is required"})
+		return
+	}
+
+	//　コレクションIDを取得
+	collectionId := ctx.Param("collectionId")
+	if collectionId == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Collection ID is required"})
+		return
+	}
+
+	// int型に変換
+	collectionIdInt, err := strconv.Atoi(collectionId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Collection ID"})
+		return
+	}
+
+	//　userID
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	// userIDはstring型であることを確認
+	userIDStr, ok := userID.(string)
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	userUuid, err := utils.StringToUUID(userIDStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// リクエストのバインド
+	var input dto.UpdateField
+	if err := ctx.ShouldBindJSON(&input); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	newField := &models.FieldData{
+		CollectionID: collectionIdInt,
+		FieldID:      input.FieldID,
+		ViewName:     input.ViewName,
+		FieldType:    input.FieldType,
+		IsRequired:   input.IsRequired,
+		DefaultValue: input.DefaultValue,
+	}
+
+	// フィールドの更新
+	err = f.fieldUsecase.Update(userUuid, newField)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Field updated successfully"})
+}
+
+func (f *FieldController) Delete(ctx *gin.Context) {
+	// パラメータから取得
+	collectionId := ctx.Param("collectionId")
+	if collectionId == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Collection ID is required"})
+		return
+	}
+	fieldId := ctx.Param("fieldId")
+	if fieldId == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Field ID is required"})
+		return
+	}
+
+	// userID
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	userIDStr, ok := userID.(string)
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// フィールドを削除
+	err := f.fieldUsecase.Delete(userIDStr, fieldId)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Field deleted successfully"})
+}
