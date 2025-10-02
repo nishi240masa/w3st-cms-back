@@ -66,7 +66,7 @@ func (f *fieldUsecase) Delete(userId string, fieldId string) error {
 	// フィールドを削除する
 	err = f.fieldRepo.DeleteFieldById(userUuid, fieldUuid)
 	if err != nil {
-		return err
+		return myerrors.WrapDomainError("fieldUsecase.Delete", err)
 	}
 	return nil
 }

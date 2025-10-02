@@ -117,6 +117,10 @@ func (c *CollectionsController) GetCollectionsByCollectionId(ctx *gin.Context) {
 
 	//　int型に変換
 	collectionIdInt, err := strconv.Atoi(collectionId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Collection ID"})
+		return
+	}
 
 	// userIdを取得
 	// ユーザーIDを取得
