@@ -13,7 +13,14 @@ import (
 	"w3st/usecase"
 )
 
+type PermissionActionOptions struct {
+	Action         func(context.Context, uuid.UUID, string, string) error
+	SuccessMessage string
+	StatusCode     int
+}
+
 type PermissionController struct {
+	BaseController
 	permissionUsecase usecase.PermissionUsecase
 }
 
@@ -23,28 +30,8 @@ func NewPermissionController(permissionUsecase usecase.PermissionUsecase) *Permi
 	}
 }
 
-// getUserUUID extracts and parses userID from gin context
-func (c *PermissionController) getUserUUID(ctx *gin.Context) uuid.UUID {
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return uuid.Nil
-	}
-	userIDStr, ok := userID.(string)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return uuid.Nil
-	}
-	userUUID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
-		return uuid.Nil
-	}
-	return userUUID
-}
-
 // handlePermissionAction handles grant or revoke permission actions
-func (c *PermissionController) handlePermissionAction(ctx *gin.Context, action func(context.Context, uuid.UUID, string, string) error, successMessage string, statusCode int) {
+func (c *PermissionController) handlePermissionAction(ctx *gin.Context, opts PermissionActionOptions) {
 	var input dto.CreatePermission
 
 	// リクエストのバインド
@@ -59,7 +46,7 @@ func (c *PermissionController) handlePermissionAction(ctx *gin.Context, action f
 	}
 
 	// 権限操作
-	err := action(ctx.Request.Context(), userUUID, input.Permission, input.Resource)
+	err := opts.Action(ctx.Request.Context(), userUUID, input.Permission, input.Resource)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {
@@ -70,7 +57,7 @@ func (c *PermissionController) handlePermissionAction(ctx *gin.Context, action f
 		return
 	}
 
-	ctx.JSON(statusCode, gin.H{"message": successMessage})
+	ctx.JSON(opts.StatusCode, gin.H{"message": opts.SuccessMessage})
 }
 
 func (c *PermissionController) CheckPermission(ctx *gin.Context) {
@@ -103,11 +90,19 @@ func (c *PermissionController) CheckPermission(ctx *gin.Context) {
 }
 
 func (c *PermissionController) GrantPermission(ctx *gin.Context) {
-	c.handlePermissionAction(ctx, c.permissionUsecase.GrantPermission, "Permission granted", http.StatusCreated)
+	c.handlePermissionAction(ctx, PermissionActionOptions{
+		Action:         c.permissionUsecase.GrantPermission,
+		SuccessMessage: "Permission granted",
+		StatusCode:     http.StatusCreated,
+	})
 }
 
 func (c *PermissionController) RevokePermission(ctx *gin.Context) {
-	c.handlePermissionAction(ctx, c.permissionUsecase.RevokePermission, "Permission revoked", http.StatusOK)
+	c.handlePermissionAction(ctx, PermissionActionOptions{
+		Action:         c.permissionUsecase.RevokePermission,
+		SuccessMessage: "Permission revoked",
+		StatusCode:     http.StatusOK,
+	})
 }
 
 func (c *PermissionController) GetPermissionsByUser(ctx *gin.Context) {

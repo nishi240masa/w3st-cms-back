@@ -14,6 +14,7 @@ import (
 )
 
 type VersionController struct {
+	BaseController
 	versionUsecase usecase.VersionUsecase
 }
 
@@ -21,26 +22,6 @@ func NewVersionController(versionUsecase usecase.VersionUsecase) *VersionControl
 	return &VersionController{
 		versionUsecase: versionUsecase,
 	}
-}
-
-// getUserUUID extracts and parses userID from gin context
-func (c *VersionController) getUserUUID(ctx *gin.Context) uuid.UUID {
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return uuid.Nil
-	}
-	userIDStr, ok := userID.(string)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return uuid.Nil
-	}
-	userUUID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
-		return uuid.Nil
-	}
-	return userUUID
 }
 
 func (c *VersionController) CreateVersion(ctx *gin.Context) {

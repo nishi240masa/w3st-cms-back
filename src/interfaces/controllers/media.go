@@ -13,6 +13,7 @@ import (
 )
 
 type MediaController struct {
+	BaseController
 	mediaUsecase usecase.MediaUsecase
 }
 
@@ -20,26 +21,6 @@ func NewMediaController(mediaUsecase usecase.MediaUsecase) *MediaController {
 	return &MediaController{
 		mediaUsecase: mediaUsecase,
 	}
-}
-
-// getUserUUID extracts and parses userID from gin context
-func (c *MediaController) getUserUUID(ctx *gin.Context) uuid.UUID {
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return uuid.Nil
-	}
-	userIDStr, ok := userID.(string)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return uuid.Nil
-	}
-	userUUID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
-		return uuid.Nil
-	}
-	return userUUID
 }
 
 func (c *MediaController) Upload(ctx *gin.Context) {
