@@ -24,8 +24,8 @@ func (m *mediaPresenter) ResponseMedia(media *models.MediaAsset) *dto.MediaRespo
 		Path:      media.Path,
 		Size:      media.Size,
 		UserID:    media.UserID.String(),
-		CreatedAt: media.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt: media.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		CreatedAt: media.CreatedAt.Format(ISO8601Format),
+		UpdatedAt: media.UpdatedAt.Format(ISO8601Format),
 	}
 }
 

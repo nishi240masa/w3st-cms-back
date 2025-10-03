@@ -23,7 +23,7 @@ func (a *auditPresenter) ResponseAuditLog(log *models.AuditLog) *dto.AuditLogRes
 		Action:    log.Action,
 		Resource:  log.Resource,
 		Details:   log.Details,
-		CreatedAt: log.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		CreatedAt: log.CreatedAt.Format(ISO8601Format),
 	}
 }
 

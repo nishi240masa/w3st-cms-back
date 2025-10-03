@@ -22,8 +22,8 @@ func (p *permissionPresenter) ResponsePermission(permission *models.UserPermissi
 		UserID:     permission.UserID.String(),
 		Permission: permission.Permission,
 		Resource:   permission.Resource,
-		CreatedAt:  permission.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:  permission.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		CreatedAt:  permission.CreatedAt.Format(ISO8601Format),
+		UpdatedAt:  permission.UpdatedAt.Format(ISO8601Format),
 	}
 }
 

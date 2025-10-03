@@ -1,6 +1,8 @@
 package presenter
 
 import (
+	"unicode/utf8"
+
 	"w3st/domain/models"
 	"w3st/dto"
 )
@@ -17,14 +19,18 @@ func NewVersionPresenter() VersionPresenter {
 }
 
 func (v *versionPresenter) ResponseVersion(version *models.ContentVersion) *dto.VersionResponse {
+	dataStr := string(version.Data)
+	if !utf8.ValidString(dataStr) {
+		dataStr = "" // Invalid UTF-8, set to empty string
+	}
 	return &dto.VersionResponse{
 		ID:        version.ID.String(),
 		ContentID: version.ContentID.String(),
 		Version:   version.Version,
-		Data:      string(version.Data),
+		Data:      dataStr,
 		UserID:    version.UserID.String(),
-		CreatedAt: version.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt: version.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		CreatedAt: version.CreatedAt.Format(ISO8601Format),
+		UpdatedAt: version.UpdatedAt.Format(ISO8601Format),
 	}
 }
 
