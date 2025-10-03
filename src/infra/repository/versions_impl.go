@@ -50,6 +50,7 @@ func (r *VersionRepositoryImpl) FindByContentID(ctx context.Context, contentID s
 
 func (r *VersionRepositoryImpl) FindLatestByContentID(ctx context.Context, contentID string) (*models.ContentVersion, *myerrors.DomainError) {
 	var version models.ContentVersion
+	// Note: Assumes version field is numeric and sortable for proper ordering
 	result := r.db.WithContext(ctx).Where("content_id = ?", contentID).Order("version desc").First(&version)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
