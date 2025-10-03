@@ -7,6 +7,6 @@ type AuditLog struct {
 	UserID    UUID      `gorm:"type:uuid;not null" json:"user_id"`
 	Action    string    `gorm:"type:varchar(50);not null" json:"action"`
 	Resource  string    `gorm:"type:varchar(255);not null" json:"resource"`
-	Timestamp time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"timestamp"`
+	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	Details   string    `gorm:"type:text" json:"details"`
 }
