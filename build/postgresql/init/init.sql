@@ -265,3 +265,7 @@ EXECUTE FUNCTION update_timestamp();
 -- インデックス追加
 CREATE INDEX IF NOT EXISTS idx_content_versions_entry ON content_versions(content_entry_id);
 CREATE INDEX IF NOT EXISTS idx_content_versions_created_by ON content_versions(created_by);
+
+-- user_permissions のユニーク制約（resource_type/resource_id の NULL 許容対応）
+CREATE UNIQUE INDEX uniq_user_permissions
+  ON user_permissions(user_id, permission_type, COALESCE(resource_type, ''), COALESCE(resource_id, ''));
