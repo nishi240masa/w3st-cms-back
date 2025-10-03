@@ -134,6 +134,8 @@ func TestAuditUsecase_GetAllLogs_Success(t *testing.T) {
 	uc := usecase.NewAuditUsecase(mockAuditRepo)
 
 	ctx := context.Background()
+	limit := 50
+	offset := 0
 	expectedLogs := []*models.AuditLog{
 		{
 			Action:   "login",
@@ -143,10 +145,10 @@ func TestAuditUsecase_GetAllLogs_Success(t *testing.T) {
 	}
 
 	mockAuditRepo.EXPECT().
-		FindAll(ctx).
+		FindAll(ctx, limit, offset).
 		Return(expectedLogs, nil)
 
-	logs, err := uc.GetAllLogs(ctx)
+	logs, err := uc.GetAllLogs(ctx, limit, offset)
 
 	require.NoError(t, err)
 	assert.Equal(t, expectedLogs, logs)

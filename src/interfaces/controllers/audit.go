@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -116,8 +117,22 @@ func (c *AuditController) GetLogsByAction(ctx *gin.Context) {
 }
 
 func (c *AuditController) GetAllLogs(ctx *gin.Context) {
+	// クエリパラメータからlimitとoffsetを取得、デフォルト値設定
+	limitStr := ctx.DefaultQuery("limit", "50")
+	offsetStr := ctx.DefaultQuery("offset", "0")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 {
+		limit = 50
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		offset = 0
+	}
+
 	// 全ログ取得
-	logs, err := c.auditUsecase.GetAllLogs(ctx.Request.Context())
+	logs, err := c.auditUsecase.GetAllLogs(ctx.Request.Context(), limit, offset)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {

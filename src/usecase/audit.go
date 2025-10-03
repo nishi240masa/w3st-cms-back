@@ -14,7 +14,7 @@ type AuditUsecase interface {
 	LogAction(ctx context.Context, userID uuid.UUID, action, resource, details string) error
 	GetLogsByUser(ctx context.Context, userID uuid.UUID) ([]*models.AuditLog, error)
 	GetLogsByAction(ctx context.Context, action string) ([]*models.AuditLog, error)
-	GetAllLogs(ctx context.Context) ([]*models.AuditLog, error)
+	GetAllLogs(ctx context.Context, limit int, offset int) ([]*models.AuditLog, error)
 }
 
 type auditUsecase struct {
@@ -62,8 +62,8 @@ func (a *auditUsecase) GetLogsByAction(ctx context.Context, action string) ([]*m
 	return logs, nil
 }
 
-func (a *auditUsecase) GetAllLogs(ctx context.Context) ([]*models.AuditLog, error) {
-	logs, err := a.auditRepo.FindAll(ctx)
+func (a *auditUsecase) GetAllLogs(ctx context.Context, limit int, offset int) ([]*models.AuditLog, error) {
+	logs, err := a.auditRepo.FindAll(ctx, limit, offset)
 	if err != nil {
 		return nil, myerrors.WrapDomainError("auditUsecase.GetAllLogs", err)
 	}

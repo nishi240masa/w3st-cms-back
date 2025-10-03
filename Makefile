@@ -30,13 +30,16 @@ mockgen:
 mock-user:
 	$(MOCKGEN) -source=src/$(SRC_DIR)/$(REPO_PKG)/users.go -destination=src/$(MOCK_DIR)/$(REPO_PKG)/mock_user_repository.go -package=mock_repositories
 
+mock-audit:
+	$(MOCKGEN) -source=src/$(SRC_DIR)/$(REPO_PKG)/audit.go -destination=src/$(MOCK_DIR)/$(REPO_PKG)/mock_audit_repository.go -package=mock_repositories
+
 #mock-auth:
 #	$(MOCKGEN) -source=src/$(SRC_DIR)/$(REPO_PKG)/auth.go -destination=src/$(MOCK_DIR)/$(SERVICE_PKG)/mock_auth_service.go -package=mock_services
 
 mock-tx:
 	$(MOCKGEN) -source=src/$(SRC_DIR)/$(REPO_PKG)/transaction.go -destination=src/$(MOCK_DIR)/$(REPO_PKG)/mock_transaction_repository.go -package=mock_repositories
 
-mock-all: mock-user mock-tx
+mock-all: mock-user mock-audit mock-tx
 
 # ---------- Format / Lint ----------
 GOFMT = gofmt

@@ -57,10 +57,9 @@ func (r *AuditRepositoryImpl) FindByAction(ctx context.Context, action string) (
 	return logs, nil
 }
 
-func (r *AuditRepositoryImpl) FindAll(ctx context.Context) ([]*models.AuditLog, *myerrors.DomainError) {
+func (r *AuditRepositoryImpl) FindAll(ctx context.Context, limit int, offset int) ([]*models.AuditLog, *myerrors.DomainError) {
 	var logs []*models.AuditLog
-	// Note: This method loads all audit logs without pagination. Use with caution for large datasets.
-	result := r.db.WithContext(ctx).Find(&logs)
+	result := r.db.WithContext(ctx).Limit(limit).Offset(offset).Find(&logs)
 	if result.Error != nil {
 		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error)
 	}
