@@ -55,6 +55,18 @@ func Init() {
 	// Fields
 	fieldController := f.InitFieldController()
 
+	// Media
+	mediaController := f.InitMediaController()
+
+	// Versions
+	versionController := f.InitVersionController()
+
+	// Permissions
+	permissionController := f.InitPermissionController()
+
+	// Audit
+	auditController := f.InitAuditController()
+
 	// ユーザー登録
 	users.POST("/signup", userController.Signup)
 
@@ -77,6 +89,34 @@ func Init() {
 	fields.PUT("/:fieldId", middlewares.JwtAuthMiddleware(authUsecase), fieldController.Update)
 	fields.DELETE("/:fieldId", middlewares.JwtAuthMiddleware(authUsecase), fieldController.Delete)
 	collections.GET("/:collectionId", middlewares.JwtAuthMiddleware(authUsecase), collectionController.GetCollectionsByCollectionId)
+
+	// Media routes
+	media := r.Group("/media")
+	media.POST("", middlewares.JwtAuthMiddleware(authUsecase), mediaController.Upload)
+	media.GET("", middlewares.JwtAuthMiddleware(authUsecase), mediaController.GetByUserID)
+	media.GET("/:id", middlewares.JwtAuthMiddleware(authUsecase), mediaController.GetByID)
+	media.DELETE("/:id", middlewares.JwtAuthMiddleware(authUsecase), mediaController.Delete)
+
+	// Versions routes
+	versions := r.Group("/versions")
+	versions.POST("", middlewares.JwtAuthMiddleware(authUsecase), versionController.CreateVersion)
+	versions.GET("/:contentID", middlewares.JwtAuthMiddleware(authUsecase), versionController.GetVersionsByContentID)
+	versions.GET("/:contentID/latest", middlewares.JwtAuthMiddleware(authUsecase), versionController.GetLatestVersion)
+	versions.POST("/:contentID/restore/:versionID", middlewares.JwtAuthMiddleware(authUsecase), versionController.RestoreVersion)
+
+	// Permissions routes
+	permissions := r.Group("/permissions")
+	permissions.GET("/check", middlewares.JwtAuthMiddleware(authUsecase), permissionController.CheckPermission)
+	permissions.POST("/grant", middlewares.JwtAuthMiddleware(authUsecase), permissionController.GrantPermission)
+	permissions.POST("/revoke", middlewares.JwtAuthMiddleware(authUsecase), permissionController.RevokePermission)
+	permissions.GET("/user", middlewares.JwtAuthMiddleware(authUsecase), permissionController.GetPermissionsByUser)
+
+	// Audit routes
+	audit := r.Group("/audit")
+	audit.POST("", middlewares.JwtAuthMiddleware(authUsecase), auditController.LogAction)
+	audit.GET("/user", middlewares.JwtAuthMiddleware(authUsecase), auditController.GetLogsByUser)
+	audit.GET("/action/:action", middlewares.JwtAuthMiddleware(authUsecase), auditController.GetLogsByAction)
+	audit.GET("/all", middlewares.JwtAuthMiddleware(authUsecase), auditController.GetAllLogs)
 
 	// 指定されたポートでサーバーを開始
 	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {
