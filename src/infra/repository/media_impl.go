@@ -49,9 +49,12 @@ func (r *MediaRepositoryImpl) FindByUserID(ctx context.Context, userID string) (
 }
 
 func (r *MediaRepositoryImpl) Update(ctx context.Context, media *models.MediaAsset) *myerrors.DomainError {
-	result := r.db.WithContext(ctx).Save(media)
+	result := r.db.WithContext(ctx).Model(&models.MediaAsset{}).Where("id = ?", media.ID).Updates(media)
 	if result.Error != nil {
 		return myerrors.NewDomainError(myerrors.QueryError, result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return myerrors.NewDomainErrorWithMessage(myerrors.QueryDataNotFoundError, "メディアが見つかりません")
 	}
 	return nil
 }
