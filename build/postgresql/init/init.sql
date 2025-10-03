@@ -246,7 +246,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 新しいテーブルに updated_at トリガーを設定
+-- updated_at を持つ新しいテーブルにトリガーを設定
 CREATE TRIGGER set_timestamp_media_assets
 BEFORE UPDATE ON media_assets
 FOR EACH ROW
