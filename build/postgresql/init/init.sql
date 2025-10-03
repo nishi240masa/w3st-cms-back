@@ -247,16 +247,19 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 -- updated_at を持つ新しいテーブルにトリガーを設定
+DROP TRIGGER IF EXISTS set_timestamp_media_assets ON media_assets;
 CREATE TRIGGER set_timestamp_media_assets
 BEFORE UPDATE ON media_assets
 FOR EACH ROW
 EXECUTE FUNCTION update_timestamp();
 
+DROP TRIGGER IF EXISTS set_timestamp_content_versions ON content_versions;
 CREATE TRIGGER set_timestamp_content_versions
 BEFORE UPDATE ON content_versions
 FOR EACH ROW
 EXECUTE FUNCTION update_timestamp();
 
+DROP TRIGGER IF EXISTS set_timestamp_user_permissions ON user_permissions;
 CREATE TRIGGER set_timestamp_user_permissions
 BEFORE UPDATE ON user_permissions
 FOR EACH ROW
@@ -276,12 +279,25 @@ CREATE UNIQUE INDEX IF NOT EXISTS uniq_user_permissions_scoped
   WHERE resource_type IS NOT NULL AND resource_id IS NOT NULL;
 
 -- user_permissions: resource_type と resource_id の整合性を保証する CHECK 制約
-ALTER TABLE user_permissions
-  ADD CONSTRAINT user_permissions_resource_scope_consistency
-  CHECK (
-    (resource_type IS NULL AND resource_id IS NULL) OR
-    (resource_type IS NOT NULL AND resource_id IS NOT NULL)
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'user_permissions_resource_scope_consistency'
+      AND conrelid = 'user_permissions'::regclass
+  ) THEN
+    ALTER TABLE user_permissions
+      ADD CONSTRAINT user_permissions_resource_scope_consistency
+      CHECK (
+        (resource_type IS NULL AND resource_id IS NULL) OR
+        (resource_type IS NOT NULL AND resource_id IS NOT NULL)
+      );
+  END IF;
+END
+$$;
+
+-- user_permissions の外部キー用インデックス
+CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user_id);
 
 -- audit_logs 検索用インデックス
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
