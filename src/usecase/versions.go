@@ -76,7 +76,7 @@ func (v *versionUsecase) GetVersionsByContentID(ctx context.Context, userID uuid
 
 	// 所有者チェック (最初のバージョンのUserIDでチェック)
 	if len(versions) > 0 && versions[0].UserID.String() != userID.String() {
-		return nil, myerrors.NewDomainErrorWithMessage(myerrors.UnPemitedOperation, "アクセス権限がありません")
+		return nil, myerrors.NewDomainErrorWithMessage(myerrors.UnPermittedOperation, "アクセス権限がありません")
 	}
 
 	return versions, nil
@@ -90,7 +90,7 @@ func (v *versionUsecase) GetLatestVersion(ctx context.Context, userID uuid.UUID,
 
 	// 所有者チェック
 	if latest.UserID.String() != userID.String() {
-		return nil, myerrors.NewDomainErrorWithMessage(myerrors.UnPemitedOperation, "アクセス権限がありません")
+		return nil, myerrors.NewDomainErrorWithMessage(myerrors.UnPermittedOperation, "アクセス権限がありません")
 	}
 
 	return latest, nil
@@ -105,7 +105,7 @@ func (v *versionUsecase) RestoreVersion(ctx context.Context, userID uuid.UUID, c
 
 	// 所有者チェック
 	if version.UserID.String() != userID.String() {
-		return nil, myerrors.NewDomainErrorWithMessage(myerrors.UnPemitedOperation, "アクセス権限がありません")
+		return nil, myerrors.NewDomainErrorWithMessage(myerrors.UnPermittedOperation, "アクセス権限がありません")
 	}
 
 	// ContentID の一致チェック

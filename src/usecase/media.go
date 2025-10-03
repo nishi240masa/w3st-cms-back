@@ -88,7 +88,7 @@ func (m *mediaUsecase) GetByID(ctx context.Context, userID uuid.UUID, id string)
 
 	// 所有者チェック
 	if media.UserID.String() != userID.String() {
-		return nil, myerrors.NewDomainErrorWithMessage(myerrors.UnPemitedOperation, "アクセス権限がありません")
+		return nil, myerrors.NewDomainErrorWithMessage(myerrors.UnPermittedOperation, "アクセス権限がありません")
 	}
 
 	return media, nil
@@ -111,7 +111,7 @@ func (m *mediaUsecase) Delete(ctx context.Context, userID uuid.UUID, id string) 
 	}
 
 	if media.UserID.String() != userID.String() {
-		return myerrors.NewDomainErrorWithMessage(myerrors.UnPemitedOperation, "アクセス権限がありません")
+		return myerrors.NewDomainErrorWithMessage(myerrors.UnPermittedOperation, "アクセス権限がありません")
 	}
 
 	// 削除

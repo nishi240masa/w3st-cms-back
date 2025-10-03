@@ -15,7 +15,7 @@ type ErrorType int
 
 const (
 	InvalidParameter ErrorType = iota
-	UnPemitedOperation
+	UnPermittedOperation
 	AlreadyExist
 	RepositoryError
 	QueryError

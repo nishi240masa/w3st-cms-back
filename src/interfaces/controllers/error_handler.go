@@ -18,7 +18,7 @@ func ErrorHandle(domainErr *myerrors.DomainError) *connect.Error {
 	case myerrors.InvalidParameter:
 		return connect.NewError(connect.CodeInvalidArgument, domainErr)
 		// ビジネスロジックエラー
-	case myerrors.UnPemitedOperation:
+	case myerrors.UnPermittedOperation:
 		return connect.NewError(connect.CodePermissionDenied, domainErr)
 		// 既に存在するエラー
 	case myerrors.AlreadyExist:
