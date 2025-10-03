@@ -275,6 +275,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS uniq_user_permissions_scoped
   ON user_permissions(user_id, permission_type, resource_type, resource_id)
   WHERE resource_type IS NOT NULL AND resource_id IS NOT NULL;
 
+-- user_permissions: resource_type と resource_id の整合性を保証する CHECK 制約
+ALTER TABLE user_permissions
+  ADD CONSTRAINT user_permissions_resource_scope_consistency
+  CHECK (
+    (resource_type IS NULL AND resource_id IS NULL) OR
+    (resource_type IS NOT NULL AND resource_id IS NOT NULL)
+  );
+
 -- audit_logs 検索用インデックス
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
