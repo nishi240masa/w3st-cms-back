@@ -266,9 +266,15 @@ EXECUTE FUNCTION update_timestamp();
 CREATE INDEX IF NOT EXISTS idx_content_versions_entry ON content_versions(content_entry_id);
 CREATE INDEX IF NOT EXISTS idx_content_versions_created_by ON content_versions(created_by);
 
--- user_permissions のユニーク制約（resource_type/resource_id の NULL 許容対応）
-CREATE UNIQUE INDEX uniq_user_permissions
-  ON user_permissions(user_id, permission_type, COALESCE(resource_type, ''), COALESCE(resource_id, ''));
+-- user_permissions のユニーク制約（NULL セマンティクスを保持）
+-- グローバル権限（resource_type, resource_id が両方 NULL）のユニーク制約
+CREATE UNIQUE INDEX uniq_user_permissions_global
+  ON user_permissions(user_id, permission_type)
+  WHERE resource_type IS NULL AND resource_id IS NULL;
+-- スコープ付き権限（resource_type, resource_id が両方 NOT NULL）のユニーク制約
+CREATE UNIQUE INDEX uniq_user_permissions_scoped
+  ON user_permissions(user_id, permission_type, resource_type, resource_id)
+  WHERE resource_type IS NOT NULL AND resource_id IS NOT NULL;
 
 -- audit_logs 検索用インデックス
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
