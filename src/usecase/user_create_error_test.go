@@ -14,6 +14,10 @@ import (
 	"w3st/usecase"
 )
 
+const (
+	testInvalidUUID = "invalid-uuid"
+)
+
 func TestUserUsecase_Create_AlreadyExists(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
@@ -128,7 +132,7 @@ func TestUserUsecase_FindByID_DBError(t *testing.T) {
 	mockRepo := mockRepositories.NewMockUserRepository(ctrl)
 	uc := usecase.NewUserUsecase(mockRepo)
 
-	userID := "invalid-uuid"
+	userID := testInvalidUUID
 
 	mockRepo.EXPECT().FindByID(gomock.Any(), userID).
 		Return(nil, myerrors.NewDomainErrorWithMessage(myerrors.QueryError, "DB障害"))
