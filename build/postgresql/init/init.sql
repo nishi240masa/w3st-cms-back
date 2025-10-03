@@ -198,3 +198,64 @@ CREATE TRIGGER set_timestamp_api_kind_relation
 BEFORE UPDATE ON api_kind_relation
 FOR EACH ROW
 EXECUTE FUNCTION update_timestamp();
+
+-- media_assets テーブル
+CREATE TABLE IF NOT EXISTS media_assets (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    mime_type VARCHAR(100),
+    size BIGINT,
+    uploaded_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- content_versions テーブル
+CREATE TABLE IF NOT EXISTS content_versions (
+    id SERIAL PRIMARY KEY,
+    content_entry_id INT REFERENCES content_entries(id) ON DELETE CASCADE,
+    version_number INT NOT NULL,
+    data JSONB NOT NULL,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- user_permissions テーブル
+CREATE TABLE IF NOT EXISTS user_permissions (
+    id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    permission_type VARCHAR(100) NOT NULL,
+    resource_type VARCHAR(100),
+    resource_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- audit_logs テーブル
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id SERIAL PRIMARY KEY,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    action VARCHAR(100) NOT NULL,
+    resource_type VARCHAR(100),
+    resource_id VARCHAR(255),
+    details JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 新しいテーブルに updated_at トリガーを設定
+CREATE TRIGGER set_timestamp_media_assets
+BEFORE UPDATE ON media_assets
+FOR EACH ROW
+EXECUTE FUNCTION update_timestamp();
+
+CREATE TRIGGER set_timestamp_content_versions
+BEFORE UPDATE ON content_versions
+FOR EACH ROW
+EXECUTE FUNCTION update_timestamp();
+
+CREATE TRIGGER set_timestamp_user_permissions
+BEFORE UPDATE ON user_permissions
+FOR EACH ROW
+EXECUTE FUNCTION update_timestamp();
