@@ -268,11 +268,11 @@ CREATE INDEX IF NOT EXISTS idx_content_versions_created_by ON content_versions(c
 
 -- user_permissions のユニーク制約（NULL セマンティクスを保持）
 -- グローバル権限（resource_type, resource_id が両方 NULL）のユニーク制約
-CREATE UNIQUE INDEX uniq_user_permissions_global
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_user_permissions_global
   ON user_permissions(user_id, permission_type)
   WHERE resource_type IS NULL AND resource_id IS NULL;
 -- スコープ付き権限（resource_type, resource_id が両方 NOT NULL）のユニーク制約
-CREATE UNIQUE INDEX uniq_user_permissions_scoped
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_user_permissions_scoped
   ON user_permissions(user_id, permission_type, resource_type, resource_id)
   WHERE resource_type IS NOT NULL AND resource_id IS NOT NULL;
 
