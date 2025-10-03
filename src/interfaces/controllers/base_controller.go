@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,4 +27,12 @@ func (c *BaseController) getUserUUID(ctx *gin.Context) uuid.UUID {
 		return uuid.Nil
 	}
 	return userUUID
+}
+
+func (c *BaseController) marshalDataToString(data interface{}) (string, error) {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+	return string(dataBytes), nil
 }

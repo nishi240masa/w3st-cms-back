@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"w3st/domain/models"
 	"w3st/dto"
 	myerrors "w3st/errors"
 	"w3st/usecase"
@@ -22,6 +23,22 @@ func NewVersionController(versionUsecase usecase.VersionUsecase) *VersionControl
 	return &VersionController{
 		versionUsecase: versionUsecase,
 	}
+}
+
+func (c *VersionController) marshalVersionData(version *models.ContentVersion) (dto.VersionResponse, error) {
+	dataStr, err := c.marshalDataToString(version.Data)
+	if err != nil {
+		return dto.VersionResponse{}, err
+	}
+	return dto.VersionResponse{
+		ID:        version.ID.String(),
+		ContentID: version.ContentID.String(),
+		Version:   version.Version,
+		Data:      dataStr,
+		UserID:    version.UserID.String(),
+		CreatedAt: version.CreatedAt.String(),
+		UpdatedAt: version.UpdatedAt.String(),
+	}, nil
 }
 
 func (c *VersionController) CreateVersion(ctx *gin.Context) {
@@ -63,23 +80,11 @@ func (c *VersionController) CreateVersion(ctx *gin.Context) {
 		return
 	}
 
-	// JSONデータを文字列化
-	dataBytes, err := json.Marshal(version.Data)
+	// レスポンス
+	response, err := c.marshalVersionData(version)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal data"})
 		return
-	}
-	dataStr := string(dataBytes)
-
-	// レスポンス
-	response := dto.VersionResponse{
-		ID:        version.ID.String(),
-		ContentID: version.ContentID.String(),
-		Version:   version.Version,
-		Data:      dataStr,
-		UserID:    version.UserID.String(),
-		CreatedAt: version.CreatedAt.String(),
-		UpdatedAt: version.UpdatedAt.String(),
 	}
 	ctx.JSON(http.StatusCreated, response)
 }
@@ -113,21 +118,12 @@ func (c *VersionController) GetVersionsByContentID(ctx *gin.Context) {
 	// レスポンス
 	responses := make([]dto.VersionResponse, 0, len(versions))
 	for _, version := range versions {
-		dataBytes, err := json.Marshal(version.Data)
+		response, err := c.marshalVersionData(version)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal data"})
 			return
 		}
-		dataStr := string(dataBytes)
-		responses = append(responses, dto.VersionResponse{
-			ID:        version.ID.String(),
-			ContentID: version.ContentID.String(),
-			Version:   version.Version,
-			Data:      dataStr,
-			UserID:    version.UserID.String(),
-			CreatedAt: version.CreatedAt.String(),
-			UpdatedAt: version.UpdatedAt.String(),
-		})
+		responses = append(responses, response)
 	}
 	ctx.JSON(http.StatusOK, responses)
 }
@@ -159,20 +155,10 @@ func (c *VersionController) GetLatestVersion(ctx *gin.Context) {
 	}
 
 	// レスポンス
-	dataBytes, err := json.Marshal(version.Data)
+	response, err := c.marshalVersionData(version)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal data"})
 		return
-	}
-	dataStr := string(dataBytes)
-	response := dto.VersionResponse{
-		ID:        version.ID.String(),
-		ContentID: version.ContentID.String(),
-		Version:   version.Version,
-		Data:      dataStr,
-		UserID:    version.UserID.String(),
-		CreatedAt: version.CreatedAt.String(),
-		UpdatedAt: version.UpdatedAt.String(),
 	}
 	ctx.JSON(http.StatusOK, response)
 }
@@ -211,20 +197,10 @@ func (c *VersionController) RestoreVersion(ctx *gin.Context) {
 	}
 
 	// レスポンス
-	dataBytes, err := json.Marshal(version.Data)
+	response, err := c.marshalVersionData(version)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal data"})
 		return
-	}
-	dataStr := string(dataBytes)
-	response := dto.VersionResponse{
-		ID:        version.ID.String(),
-		ContentID: version.ContentID.String(),
-		Version:   version.Version,
-		Data:      dataStr,
-		UserID:    version.UserID.String(),
-		CreatedAt: version.CreatedAt.String(),
-		UpdatedAt: version.UpdatedAt.String(),
 	}
 	ctx.JSON(http.StatusOK, response)
 }
