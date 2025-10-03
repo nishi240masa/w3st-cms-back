@@ -14,6 +14,11 @@ import (
 	"w3st/usecase"
 )
 
+const (
+	testPermissionRead   = "read"
+	testResourceDocument = "document"
+)
+
 func TestPermissionUsecase_CheckPermission_HasPermission(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
@@ -24,8 +29,8 @@ func TestPermissionUsecase_CheckPermission_HasPermission(t *testing.T) {
 
 	ctx := context.Background()
 	userID := uuid.New()
-	permission := "read"
-	resource := "document"
+	permission := testPermissionRead
+	resource := testResourceDocument
 
 	permissions := []*models.UserPermission{
 		{
@@ -56,12 +61,12 @@ func TestPermissionUsecase_CheckPermission_NoPermission(t *testing.T) {
 	ctx := context.Background()
 	userID := uuid.New()
 	permission := "write"
-	resource := "document"
+	resource := testResourceDocument
 
 	permissions := []*models.UserPermission{
 		{
 			UserID:     userID,
-			Permission: "read",
+			Permission: testPermissionRead,
 			Resource:   resource,
 		},
 	}
@@ -86,8 +91,8 @@ func TestPermissionUsecase_GrantPermission_Success(t *testing.T) {
 
 	ctx := context.Background()
 	userID := uuid.New()
-	permission := "read"
-	resource := "document"
+	permission := testPermissionRead
+	resource := testResourceDocument
 
 	// CheckPermission が false を返す
 	mockPermissionRepo.EXPECT().
@@ -113,8 +118,8 @@ func TestPermissionUsecase_GrantPermission_AlreadyExists(t *testing.T) {
 
 	ctx := context.Background()
 	userID := uuid.New()
-	permission := "read"
-	resource := "document"
+	permission := testPermissionRead
+	resource := testResourceDocument
 
 	permissions := []*models.UserPermission{
 		{
@@ -143,8 +148,8 @@ func TestPermissionUsecase_RevokePermission_Success(t *testing.T) {
 
 	ctx := context.Background()
 	userID := uuid.New()
-	permission := "read"
-	resource := "document"
+	permission := testPermissionRead
+	resource := testResourceDocument
 
 	permissions := []*models.UserPermission{
 		{
@@ -182,8 +187,8 @@ func TestPermissionUsecase_GetPermissionsByUser_Success(t *testing.T) {
 	expectedPermissions := []*models.UserPermission{
 		{
 			UserID:     userID,
-			Permission: "read",
-			Resource:   "document",
+			Permission: testPermissionRead,
+			Resource:   testResourceDocument,
 		},
 	}
 

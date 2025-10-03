@@ -16,6 +16,12 @@ import (
 	"w3st/usecase"
 )
 
+const (
+	testActionCreate          = "create"
+	testResourceUser          = "user"
+	testDetailsCreatedNewUser = "Created new user"
+)
+
 func TestAuditUsecase_LogAction_Success(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
@@ -26,9 +32,9 @@ func TestAuditUsecase_LogAction_Success(t *testing.T) {
 
 	ctx := context.Background()
 	userID := uuid.New()
-	action := "create"
-	resource := "user"
-	details := "Created new user"
+	action := testActionCreate
+	resource := testResourceUser
+	details := testDetailsCreatedNewUser
 
 	mockAuditRepo.EXPECT().
 		Create(ctx, gomock.Any()).
@@ -49,9 +55,9 @@ func TestAuditUsecase_LogAction_Failure(t *testing.T) {
 
 	ctx := context.Background()
 	userID := uuid.New()
-	action := "create"
-	resource := "user"
-	details := "Created new user"
+	action := testActionCreate
+	resource := testResourceUser
+	details := testDetailsCreatedNewUser
 
 	mockAuditRepo.EXPECT().
 		Create(ctx, gomock.Any()).
@@ -100,12 +106,12 @@ func TestAuditUsecase_GetLogsByAction_Success(t *testing.T) {
 	uc := usecase.NewAuditUsecase(mockAuditRepo)
 
 	ctx := context.Background()
-	action := "create"
+	action := testActionCreate
 	expectedLogs := []*models.AuditLog{
 		{
 			Action:   action,
-			Resource: "user",
-			Details:  "Created new user",
+			Resource: testResourceUser,
+			Details:  testDetailsCreatedNewUser,
 		},
 	}
 

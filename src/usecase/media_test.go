@@ -14,6 +14,10 @@ import (
 	"w3st/usecase"
 )
 
+const (
+	testFileTypeImageJPEG = "image/jpeg"
+)
+
 func TestMediaUsecase_Upload_Success(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
@@ -25,7 +29,7 @@ func TestMediaUsecase_Upload_Success(t *testing.T) {
 	ctx := context.Background()
 	userID := uuid.New()
 	name := "test.jpg"
-	fileType := "image/jpeg"
+	fileType := testFileTypeImageJPEG
 	path := "/uploads/test.jpg"
 	size := int64(1024)
 
@@ -54,7 +58,7 @@ func TestMediaUsecase_Upload_FileTooLarge(t *testing.T) {
 	ctx := context.Background()
 	userID := uuid.New()
 	name := "large.jpg"
-	fileType := "image/jpeg"
+	fileType := testFileTypeImageJPEG
 	path := "/uploads/large.jpg"
 	size := int64(20 * 1024 * 1024) // 20MB
 
