@@ -12,6 +12,6 @@ type AuditLogResponse struct {
 	UserID    string `json:"user_id"`
 	Action    string `json:"action"`
 	Resource  string `json:"resource"`
-	CreatedAt string `json:"created_at"`
 	Details   string `json:"details"`
+	CreatedAt string `json:"created_at"`
 }
