@@ -23,6 +23,26 @@ func NewVersionController(versionUsecase usecase.VersionUsecase) *VersionControl
 	}
 }
 
+// getUserUUID extracts and parses userID from gin context
+func (c *VersionController) getUserUUID(ctx *gin.Context) uuid.UUID {
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return uuid.Nil
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return uuid.Nil
+	}
+	userUUID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return uuid.Nil
+	}
+	return userUUID
+}
+
 func (c *VersionController) CreateVersion(ctx *gin.Context) {
 	var input dto.CreateVersion
 
@@ -32,20 +52,8 @@ func (c *VersionController) CreateVersion(ctx *gin.Context) {
 		return
 	}
 
-	// userIDを取得
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	userIDStr, ok := userID.(string)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-	userUUID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+	userUUID := c.getUserUUID(ctx)
+	if userUUID == uuid.Nil {
 		return
 	}
 
@@ -98,20 +106,8 @@ func (c *VersionController) CreateVersion(ctx *gin.Context) {
 func (c *VersionController) GetVersionsByContentID(ctx *gin.Context) {
 	contentID := ctx.Param("contentID")
 
-	// userIDを取得
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	userIDStr, ok := userID.(string)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-	userUUID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+	userUUID := c.getUserUUID(ctx)
+	if userUUID == uuid.Nil {
 		return
 	}
 
@@ -158,20 +154,8 @@ func (c *VersionController) GetVersionsByContentID(ctx *gin.Context) {
 func (c *VersionController) GetLatestVersion(ctx *gin.Context) {
 	contentID := ctx.Param("contentID")
 
-	// userIDを取得
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	userIDStr, ok := userID.(string)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-	userUUID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+	userUUID := c.getUserUUID(ctx)
+	if userUUID == uuid.Nil {
 		return
 	}
 
@@ -216,20 +200,8 @@ func (c *VersionController) RestoreVersion(ctx *gin.Context) {
 	contentID := ctx.Param("contentID")
 	versionID := ctx.Param("versionID")
 
-	// userIDを取得
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	userIDStr, ok := userID.(string)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-	userUUID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+	userUUID := c.getUserUUID(ctx)
+	if userUUID == uuid.Nil {
 		return
 	}
 

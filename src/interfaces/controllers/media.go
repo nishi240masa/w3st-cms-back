@@ -22,6 +22,26 @@ func NewMediaController(mediaUsecase usecase.MediaUsecase) *MediaController {
 	}
 }
 
+// getUserUUID extracts and parses userID from gin context
+func (c *MediaController) getUserUUID(ctx *gin.Context) uuid.UUID {
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return uuid.Nil
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return uuid.Nil
+	}
+	userUUID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return uuid.Nil
+	}
+	return userUUID
+}
+
 func (c *MediaController) Upload(ctx *gin.Context) {
 	var input dto.CreateMedia
 
@@ -31,20 +51,8 @@ func (c *MediaController) Upload(ctx *gin.Context) {
 		return
 	}
 
-	// userIDを取得
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	userIDStr, ok := userID.(string)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-	userUUID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+	userUUID := c.getUserUUID(ctx)
+	if userUUID == uuid.Nil {
 		return
 	}
 
@@ -77,20 +85,8 @@ func (c *MediaController) Upload(ctx *gin.Context) {
 func (c *MediaController) GetByID(ctx *gin.Context) {
 	id := ctx.Param("id")
 
-	// userIDを取得
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	userIDStr, ok := userID.(string)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-	userUUID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+	userUUID := c.getUserUUID(ctx)
+	if userUUID == uuid.Nil {
 		return
 	}
 
@@ -121,20 +117,8 @@ func (c *MediaController) GetByID(ctx *gin.Context) {
 }
 
 func (c *MediaController) GetByUserID(ctx *gin.Context) {
-	// userIDを取得
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	userIDStr, ok := userID.(string)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-	userUUID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+	userUUID := c.getUserUUID(ctx)
+	if userUUID == uuid.Nil {
 		return
 	}
 
@@ -170,25 +154,13 @@ func (c *MediaController) GetByUserID(ctx *gin.Context) {
 func (c *MediaController) Delete(ctx *gin.Context) {
 	id := ctx.Param("id")
 
-	// userIDを取得
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	userIDStr, ok := userID.(string)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-	userUUID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+	userUUID := c.getUserUUID(ctx)
+	if userUUID == uuid.Nil {
 		return
 	}
 
 	// メディア削除
-	err = c.mediaUsecase.Delete(ctx.Request.Context(), userUUID, id)
+	err := c.mediaUsecase.Delete(ctx.Request.Context(), userUUID, id)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {
