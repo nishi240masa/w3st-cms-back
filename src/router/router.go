@@ -109,12 +109,12 @@ func Init() {
 	permissions.GET("/check", middlewares.JwtAuthMiddleware(authUsecase), permissionController.CheckPermission)
 	permissions.POST("/grant", middlewares.JwtAuthMiddleware(authUsecase), permissionController.GrantPermission)
 	permissions.POST("/revoke", middlewares.JwtAuthMiddleware(authUsecase), permissionController.RevokePermission)
-	permissions.GET("", middlewares.JwtAuthMiddleware(authUsecase), permissionController.GetPermissionsByUser)
+	permissions.GET("/user", middlewares.JwtAuthMiddleware(authUsecase), permissionController.GetPermissionsByUser)
 
 	// Audit routes
 	audit := r.Group("/audit")
 	audit.POST("", middlewares.JwtAuthMiddleware(authUsecase), auditController.LogAction)
-	audit.GET("", middlewares.JwtAuthMiddleware(authUsecase), auditController.GetLogsByUser)
+	audit.GET("/user", middlewares.JwtAuthMiddleware(authUsecase), auditController.GetLogsByUser)
 	audit.GET("/action/:action", middlewares.JwtAuthMiddleware(authUsecase), auditController.GetLogsByAction)
 	audit.GET("/all", middlewares.JwtAuthMiddleware(authUsecase), auditController.GetAllLogs)
 
