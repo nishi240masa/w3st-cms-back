@@ -261,3 +261,7 @@ CREATE TRIGGER set_timestamp_user_permissions
 BEFORE UPDATE ON user_permissions
 FOR EACH ROW
 EXECUTE FUNCTION update_timestamp();
+
+-- インデックス追加
+CREATE INDEX IF NOT EXISTS idx_content_versions_entry ON content_versions(content_entry_id);
+CREATE INDEX IF NOT EXISTS idx_content_versions_created_by ON content_versions(created_by);
