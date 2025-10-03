@@ -123,7 +123,7 @@ func TestFieldUsecase_Delete_InvalidUUID(t *testing.T) {
 	mockCollectionsRepo := mockRepositories.NewMockCollectionsRepository(ctrl)
 	uc := usecase.NewFieldUsecase(mockFieldRepo, mockCollectionsRepo)
 
-	userID := "invalid-uuid"
+	userID := "testInvalidUUID"
 	fieldID := uuid.New().String()
 
 	err := uc.Delete(userID, fieldID)
