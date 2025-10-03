@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
+	myerrors "w3st/errors"
 )
 
 type BaseController struct{}
@@ -32,7 +34,7 @@ func (c *BaseController) getUserUUID(ctx *gin.Context) uuid.UUID {
 func (c *BaseController) marshalDataToString(data interface{}) (string, error) {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
-		return "", err
+		return "", myerrors.NewDomainError(myerrors.ErrorUnknown, err)
 	}
 	return string(dataBytes), nil
 }
