@@ -219,7 +219,9 @@ CREATE TABLE IF NOT EXISTS content_versions (
     data JSONB NOT NULL,
     created_by UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (content_entry_id, version_number),
+    CHECK (version_number > 0)
 );
 
 -- user_permissions テーブル
