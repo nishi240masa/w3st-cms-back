@@ -112,7 +112,7 @@ type ErrorType int
 
 const (
         InvalidParameter ErrorType = iota
-        UnPemitedOperation
+        UnPermittedOperation
         AlreadyExist
         RepositoryError
         QueryError
@@ -522,7 +522,7 @@ func ErrorHandle(domainErr *myerrors.DomainError) *connect.Error <span class="co
         case myerrors.InvalidParameter:<span class="cov0" title="0">
                 return connect.NewError(connect.CodeInvalidArgument, domainErr)</span>
                 // ビジネスロジックエラー
-        case myerrors.UnPemitedOperation:<span class="cov0" title="0">
+        case myerrors.UnPermittedOperation:<span class="cov0" title="0">
                 return connect.NewError(connect.CodePermissionDenied, domainErr)</span>
                 // 既に存在するエラー
         case myerrors.AlreadyExist:<span class="cov0" title="0">
