@@ -38,8 +38,8 @@ func (r *FieldRepository) UpdateField(newField *models.FieldData) error {
 	return nil
 }
 
-func (r *FieldRepository) DeleteFieldById(userId uuid.UUID, fieldId uuid.UUID) error {
-	result := r.db.Where("user_id = ? AND id = ?", userId.String(), fieldId.String()).Delete(&models.FieldData{})
+func (r *FieldRepository) DeleteFieldById(projectId int, fieldId uuid.UUID) error {
+	result := r.db.Where("project_id = ? AND id = ?", projectId, fieldId.String()).Delete(&models.FieldData{})
 	if result.Error != nil {
 		// クエリの実行中に発生したエラー
 		return myerrors.NewDomainError(myerrors.QueryError, result.Error)

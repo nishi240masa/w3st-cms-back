@@ -6,7 +6,6 @@ package mock_repositories
 
 import (
 	reflect "reflect"
-
 	models "w3st/domain/models"
 
 	gomock "github.com/golang/mock/gomock"
@@ -51,17 +50,17 @@ func (mr *MockFieldRepositoryMockRecorder) CreateField(newField interface{}) *go
 }
 
 // DeleteFieldById mocks base method.
-func (m *MockFieldRepository) DeleteFieldById(userId, fieldId uuid.UUID) error {
+func (m *MockFieldRepository) DeleteFieldById(projectId int, fieldId uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteFieldById", userId, fieldId)
+	ret := m.ctrl.Call(m, "DeleteFieldById", projectId, fieldId)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteFieldById indicates an expected call of DeleteFieldById.
-func (mr *MockFieldRepositoryMockRecorder) DeleteFieldById(userId, fieldId interface{}) *gomock.Call {
+func (mr *MockFieldRepositoryMockRecorder) DeleteFieldById(projectId, fieldId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFieldById", reflect.TypeOf((*MockFieldRepository)(nil).DeleteFieldById), userId, fieldId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFieldById", reflect.TypeOf((*MockFieldRepository)(nil).DeleteFieldById), projectId, fieldId)
 }
 
 // UpdateField mocks base method.

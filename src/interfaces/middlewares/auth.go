@@ -5,10 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"w3st/usecase"
-
 	myerrors "w3st/errors"
 	"w3st/interfaces/controllers"
+	"w3st/usecase"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,6 +40,38 @@ func JwtAuthMiddleware(authUsecase usecase.JwtUsecase) gin.HandlerFunc {
 		c.Set("userID", userID)
 
 		// tokenが有効な場合、次のハンドラーに進む
+		c.Next()
+	}
+}
+
+func ApiKeyAuthMiddleware(apiKeyUsecase usecase.ApiKeyUsecase) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// API keyをヘッダーから取得
+		apiKey := c.Request.Header.Get("X-API-Key")
+
+		// API keyの存在を確認
+		if apiKey == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "X-API-Key header is required"})
+			c.Abort()
+			return
+		}
+
+		// API keyの検証
+		userID, projectID, err := apiKeyUsecase.ValidateApiKey(apiKey)
+		if err != nil {
+			domainErr := &myerrors.DomainError{}
+			if errors.As(err, &domainErr) {
+				err := controllers.ErrorHandle(domainErr)
+				c.JSON(controllers.HttpStatusCodeFromConnectCode(err.Code()), gin.H{"error": err.Error()})
+				c.Abort()
+				return
+			}
+		}
+		// API keyの検証に成功した場合、userIDとprojectIDをコンテキストに保存
+		c.Set("userID", userID.String())
+		c.Set("projectID", projectID)
+
+		// API keyが有効な場合、次のハンドラーに進む
 		c.Next()
 	}
 }

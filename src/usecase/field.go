@@ -9,9 +9,9 @@ import (
 )
 
 type FieldUsecase interface {
-	Create(userId uuid.UUID, newField *models.FieldData) error
-	Update(userId uuid.UUID, newField *models.FieldData) error
-	Delete(userId string, fieldId string) error
+	Create(projectId int, newField *models.FieldData) error
+	Update(projectId int, newField *models.FieldData) error
+	Delete(projectId int, fieldId string) error
 }
 
 type fieldUsecase struct {
@@ -26,9 +26,9 @@ func NewFieldUsecase(fieldRepo repositories.FieldRepository, collectionRepo repo
 	}
 }
 
-func (f *fieldUsecase) Create(userUuid uuid.UUID, newField *models.FieldData) error {
+func (f *fieldUsecase) Create(projectId int, newField *models.FieldData) error {
 	// collectionが存在するか確認
-	if _, err := f.collectionRepo.GetCollectionsByCollectionId(newField.CollectionID, userUuid); err != nil {
+	if _, err := f.collectionRepo.GetCollectionsByCollectionId(newField.CollectionID, projectId); err != nil {
 		//	collectionが存在しない場合
 		return myerrors.WrapDomainError("fieldUsecase.Create", err)
 	}
@@ -40,9 +40,9 @@ func (f *fieldUsecase) Create(userUuid uuid.UUID, newField *models.FieldData) er
 	return nil
 }
 
-func (f *fieldUsecase) Update(userId uuid.UUID, newField *models.FieldData) error {
+func (f *fieldUsecase) Update(projectId int, newField *models.FieldData) error {
 	// collectionが存在するか確認
-	if _, err := f.collectionRepo.GetCollectionsByCollectionId(newField.CollectionID, userId); err != nil {
+	if _, err := f.collectionRepo.GetCollectionsByCollectionId(newField.CollectionID, projectId); err != nil {
 		return myerrors.WrapDomainError("fieldUsecase.Update", err)
 	}
 	if err := f.fieldRepo.UpdateField(newField); err != nil {
@@ -53,18 +53,13 @@ func (f *fieldUsecase) Update(userId uuid.UUID, newField *models.FieldData) erro
 	return nil
 }
 
-func (f *fieldUsecase) Delete(userId string, fieldId string) error {
-	// UUIDに変換
-	userUuid, err := uuid.Parse(userId)
-	if err != nil {
-		return myerrors.WrapDomainError("fieldUsecase.Delete", err)
-	}
+func (f *fieldUsecase) Delete(projectId int, fieldId string) error {
 	fieldUuid, err := uuid.Parse(fieldId)
 	if err != nil {
 		return myerrors.WrapDomainError("fieldUsecase.Delete", err)
 	}
 	// フィールドを削除する
-	err = f.fieldRepo.DeleteFieldById(userUuid, fieldUuid)
+	err = f.fieldRepo.DeleteFieldById(projectId, fieldUuid)
 	if err != nil {
 		return myerrors.WrapDomainError("fieldUsecase.Delete", err)
 	}

@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE api_collections (
     id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    project_id INT NOT NULL, -- プロジェクトID
     name VARCHAR(100) NOT NULL, -- コレクション名 ex) 'ユーザー', '商品'
     description TEXT, -- 説明 ex) 'ユーザー情報を管理するコレクション'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -22,7 +23,21 @@ CREATE TABLE api_collections (
 -- api_fields: 各スキーマのフィールド定義
 CREATE TABLE api_fields (
     id SERIAL PRIMARY KEY,
-    collection_id INT NOT NULL REFERENCES api_collections(id) ON DELETE CASCADE, 
+    collection_id INT NOT NULL REFERENCES api_collections(id) ON DELETE CASCADE,
+    field_id VARCHAR(100) NOT NULL, -- 内部的なキー ex) 'user_id', 'product_name'
+    view_name VARCHAR(100) NOT NULL, -- 表示名 ex) 'ユーザーID', '商品名'
+    field_type VARCHAR(50) NOT NULL, -- フィールドの型 ('text', 'number', 'boolean', etc.)
+    is_required BOOLEAN DEFAULT false, -- 必須かどうか
+    default_value JSONB, -- デフォルト値 (JSON形式で保存)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- field_data: 各スキーマのフィールド定義 (互換性用)
+CREATE TABLE field_data (
+    id SERIAL PRIMARY KEY,
+    project_id INT NOT NULL, -- プロジェクトID
+    collection_id INT NOT NULL REFERENCES api_collections(id) ON DELETE CASCADE,
     field_id VARCHAR(100) NOT NULL, -- 内部的なキー ex) 'user_id', 'product_name'
     view_name VARCHAR(100) NOT NULL, -- 表示名 ex) 'ユーザーID', '商品名'
     field_type VARCHAR(50) NOT NULL, -- フィールドの型 ('text', 'number', 'boolean', etc.)
@@ -35,6 +50,7 @@ CREATE TABLE api_fields (
 -- content_entries: 実際のレコード（エントリ）を管理
 CREATE TABLE content_entries (
     id SERIAL PRIMARY KEY,
+    project_id INT NOT NULL, -- プロジェクトID
     collection_id INT NOT NULL REFERENCES api_collections(id) ON DELETE CASCADE,
     data JSONB NOT NULL, -- エントリのデータ (JSON形式で保存)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -46,6 +62,15 @@ CREATE TABLE IF NOT EXISTS list_options (
     id SERIAL PRIMARY KEY,
     field_id INT NOT NULL REFERENCES api_fields(id) ON DELETE CASCADE,
     value VARCHAR(255) NOT NULL, -- 選択肢の値 ex) 'オプション1', 'オプション2'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS entries (
+    id SERIAL PRIMARY KEY,
+    project_id INT NOT NULL, -- プロジェクトID
+    collection_id INT NOT NULL REFERENCES api_collections(id) ON DELETE CASCADE,
+    data JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -63,6 +88,7 @@ CREATE TABLE IF NOT EXISTS api_kind_relation (
 CREATE TABLE api_keys (
     id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    project_id INT NOT NULL,                         -- プロジェクトID
     name VARCHAR(100),                              -- 任意の名前（管理用）
     key VARCHAR(255) UNIQUE NOT NULL,               -- 発行されたAPIキー文字列
     ip_whitelist TEXT[],                            -- 許可されたIPアドレス（空配列は無制限）

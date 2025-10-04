@@ -12,7 +12,14 @@ import (
 type Factory interface {
 	InitUserController() *controllers.UserController
 	InitAuthUsecase() usecase.JwtUsecase
+	InitApiKeyUsecase() usecase.ApiKeyUsecase
+	InitApiKeyController() *controllers.ApiKeyController
 	InitCollectionController() *controllers.CollectionsController
+	InitSDKCollectionsController() *controllers.SDKCollectionsController
+	InitGUICollectionsController() *controllers.GUICollectionsController
+	InitSDKEntriesController() *controllers.SDKEntriesController
+	InitGUIEntriesController() *controllers.GUIEntriesController
+	InitEntriesController() *controllers.EntriesController
 	InitFieldController() *controllers.FieldController
 	InitMediaController() *controllers.MediaController
 	InitAuditController() *controllers.AuditController
@@ -41,11 +48,64 @@ func (f factory) InitAuthUsecase() usecase.JwtUsecase {
 	return usecase.NewjwtAuthUsecase()
 }
 
+func (f factory) InitApiKeyUsecase() usecase.ApiKeyUsecase {
+	return usecase.NewApiKeyUsecase()
+}
+
+func (f factory) InitApiKeyController() *controllers.ApiKeyController {
+	apiKeyUsecase := usecase.NewApiKeyUsecase()
+
+	return controllers.NewApiKeyController(apiKeyUsecase)
+}
+
 func (f factory) InitCollectionController() *controllers.CollectionsController {
 	collectionRepo := infrastructure.NewCollectionsRepository(f.DB)
 	collectionUsecase := usecase.NewCollectionsUsecase(collectionRepo)
 
 	return controllers.NewCollectionsController(collectionUsecase)
+}
+
+func (f factory) InitSDKCollectionsController() *controllers.SDKCollectionsController {
+	collectionRepo := infrastructure.NewCollectionsRepository(f.DB)
+	collectionUsecase := usecase.NewCollectionsUsecase(collectionRepo)
+
+	return controllers.NewSDKCollectionsController(collectionUsecase)
+}
+
+func (f factory) InitGUICollectionsController() *controllers.GUICollectionsController {
+	collectionRepo := infrastructure.NewCollectionsRepository(f.DB)
+	fieldRepo := infrastructure.NewFieldRepository(f.DB)
+	collectionUsecase := usecase.NewCollectionsUsecase(collectionRepo)
+	fieldUsecase := usecase.NewFieldUsecase(fieldRepo, collectionRepo)
+
+	return controllers.NewGUICollectionsController(collectionUsecase, fieldUsecase)
+}
+
+func (f factory) InitSDKEntriesController() *controllers.SDKEntriesController {
+	entriesRepo := infrastructure.NewEntriesRepository(f.DB)
+	collectionRepo := infrastructure.NewCollectionsRepository(f.DB)
+	collectionUsecase := usecase.NewCollectionsUsecase(collectionRepo)
+	entriesUsecase := usecase.NewEntriesUsecase(entriesRepo, collectionUsecase)
+
+	return controllers.NewSDKEntriesController(entriesUsecase)
+}
+
+func (f factory) InitGUIEntriesController() *controllers.GUIEntriesController {
+	entriesRepo := infrastructure.NewEntriesRepository(f.DB)
+	collectionRepo := infrastructure.NewCollectionsRepository(f.DB)
+	collectionUsecase := usecase.NewCollectionsUsecase(collectionRepo)
+	entriesUsecase := usecase.NewEntriesUsecase(entriesRepo, collectionUsecase)
+
+	return controllers.NewGUIEntriesController(entriesUsecase)
+}
+
+func (f factory) InitEntriesController() *controllers.EntriesController {
+	entriesRepo := infrastructure.NewEntriesRepository(f.DB)
+	collectionRepo := infrastructure.NewCollectionsRepository(f.DB)
+	collectionUsecase := usecase.NewCollectionsUsecase(collectionRepo)
+	entriesUsecase := usecase.NewEntriesUsecase(entriesRepo, collectionUsecase)
+
+	return controllers.NewEntriesController(entriesUsecase)
 }
 
 func (f factory) InitFieldController() *controllers.FieldController {

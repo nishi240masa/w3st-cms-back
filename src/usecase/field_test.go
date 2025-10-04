@@ -22,21 +22,21 @@ func TestFieldUsecase_Create_Success(t *testing.T) {
 	mockCollectionsRepo := mockRepositories.NewMockCollectionsRepository(ctrl)
 	uc := usecase.NewFieldUsecase(mockFieldRepo, mockCollectionsRepo)
 
-	userID := uuid.New()
+	projectID := 1
 	newField := &models.FieldData{
 		CollectionID: 1,
 		ViewName:     "Test Field",
 	}
 
 	mockCollectionsRepo.EXPECT().
-		GetCollectionsByCollectionId(1, userID).
+		GetCollectionsByCollectionId(1, projectID).
 		Return(&models.ApiCollection{}, nil)
 
 	mockFieldRepo.EXPECT().
 		CreateField(newField).
 		Return(nil)
 
-	err := uc.Create(userID, newField)
+	err := uc.Create(projectID, newField)
 
 	require.NoError(t, err)
 }
@@ -50,17 +50,17 @@ func TestFieldUsecase_Create_CollectionNotFound(t *testing.T) {
 	mockCollectionsRepo := mockRepositories.NewMockCollectionsRepository(ctrl)
 	uc := usecase.NewFieldUsecase(mockFieldRepo, mockCollectionsRepo)
 
-	userID := uuid.New()
+	projectID := 1
 	newField := &models.FieldData{
 		CollectionID: 1,
 		ViewName:     "Test Field",
 	}
 
 	mockCollectionsRepo.EXPECT().
-		GetCollectionsByCollectionId(1, userID).
+		GetCollectionsByCollectionId(1, projectID).
 		Return(nil, errors.New("collection not found"))
 
-	err := uc.Create(userID, newField)
+	err := uc.Create(projectID, newField)
 
 	require.Error(t, err)
 }
@@ -74,21 +74,21 @@ func TestFieldUsecase_Update_Success(t *testing.T) {
 	mockCollectionsRepo := mockRepositories.NewMockCollectionsRepository(ctrl)
 	uc := usecase.NewFieldUsecase(mockFieldRepo, mockCollectionsRepo)
 
-	userID := uuid.New()
+	projectID := 1
 	newField := &models.FieldData{
 		CollectionID: 1,
 		ViewName:     "Updated Field",
 	}
 
 	mockCollectionsRepo.EXPECT().
-		GetCollectionsByCollectionId(1, userID).
+		GetCollectionsByCollectionId(1, projectID).
 		Return(&models.ApiCollection{}, nil)
 
 	mockFieldRepo.EXPECT().
 		UpdateField(newField).
 		Return(nil)
 
-	err := uc.Update(userID, newField)
+	err := uc.Update(projectID, newField)
 
 	require.NoError(t, err)
 }
@@ -102,14 +102,14 @@ func TestFieldUsecase_Delete_Success(t *testing.T) {
 	mockCollectionsRepo := mockRepositories.NewMockCollectionsRepository(ctrl)
 	uc := usecase.NewFieldUsecase(mockFieldRepo, mockCollectionsRepo)
 
-	userID := uuid.New().String()
+	projectID := 1
 	fieldID := uuid.New().String()
 
 	mockFieldRepo.EXPECT().
-		DeleteFieldById(uuid.MustParse(userID), uuid.MustParse(fieldID)).
+		DeleteFieldById(projectID, uuid.MustParse(fieldID)).
 		Return(nil)
 
-	err := uc.Delete(userID, fieldID)
+	err := uc.Delete(projectID, fieldID)
 
 	require.NoError(t, err)
 }
@@ -123,10 +123,10 @@ func TestFieldUsecase_Delete_InvalidUUID(t *testing.T) {
 	mockCollectionsRepo := mockRepositories.NewMockCollectionsRepository(ctrl)
 	uc := usecase.NewFieldUsecase(mockFieldRepo, mockCollectionsRepo)
 
-	userID := "testInvalidUUID"
-	fieldID := uuid.New().String()
+	projectID := 1
+	fieldID := "testInvalidUUID"
 
-	err := uc.Delete(userID, fieldID)
+	err := uc.Delete(projectID, fieldID)
 
 	require.Error(t, err)
 }

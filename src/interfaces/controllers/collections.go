@@ -53,9 +53,13 @@ func (c *CollectionsController) MakeCollection(ctx *gin.Context) {
 		return
 	}
 
+	// プロジェクトIDを取得
+	projectID := ctx.GetInt("projectID")
+
 	// コレクション
 	newCollection := &models.ApiCollection{
 		UserID:      userUuid,
+		ProjectID:   projectID,
 		Name:        input.Name,
 		Description: input.Description,
 	}
@@ -75,29 +79,12 @@ func (c *CollectionsController) MakeCollection(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Collection created successfully"})
 }
 
-func (c *CollectionsController) GetCollectionByUserId(ctx *gin.Context) {
-	// ユーザーIDを取得
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
-		return
-	}
-
-	// userIDはstring型であることを確認
-	userIDStr, ok := userID.(string)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
-	userUuid, err := utils.StringToUUID(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+func (c *CollectionsController) GetCollectionByProjectId(ctx *gin.Context) {
+	// プロジェクトIDを取得
+	projectID := ctx.GetInt("projectID")
 
 	// コレクションを取得
-	collection, err := c.collectionUsecase.GetCollectionByUserId(userUuid)
+	collection, err := c.collectionUsecase.GetCollectionByProjectId(projectID)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {
@@ -122,29 +109,11 @@ func (c *CollectionsController) GetCollectionsByCollectionId(ctx *gin.Context) {
 		return
 	}
 
-	// userIdを取得
-	// ユーザーIDを取得
-	userID, exists := ctx.Get("userID")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
-		return
-	}
-
-	// userIDはstring型であることを確認
-	userIDStr, ok := userID.(string)
-	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
-	userUuid, err := utils.StringToUUID(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	// プロジェクトIDを取得
+	projectID := ctx.GetInt("projectID")
 
 	// コレクションを取得
-	collection, err := c.collectionUsecase.GetCollectionsByCollectionId(collectionIdInt, userUuid)
+	collection, err := c.collectionUsecase.GetCollectionsByCollectionId(collectionIdInt, projectID)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {

@@ -16,6 +16,11 @@ type JwtUsecase interface {
 	ValidateToken(token string) (string, error)
 }
 
+type ApiKeyUsecase interface {
+	ValidateApiKey(apiKey string) (uuid.UUID, int, error)
+	CreateApiKey(userID string, projectID int, name string) (string, error)
+}
+
 type jwtAuthUsecase struct {
 	secretKey string
 }
@@ -81,4 +86,24 @@ func (a *jwtAuthUsecase) ValidateToken(token string) (string, error) {
 	}
 
 	return subStr, nil
+}
+
+type apiKeyUsecase struct {
+	// TODO: add repository
+}
+
+func NewApiKeyUsecase() ApiKeyUsecase {
+	return &apiKeyUsecase{}
+}
+
+func (a *apiKeyUsecase) ValidateApiKey(apiKey string) (uuid.UUID, int, error) {
+	// TODO: implement validation
+	// For now, return a dummy UUID and project ID
+	return uuid.New(), 1, nil
+}
+
+func (a *apiKeyUsecase) CreateApiKey(userID string, projectID int, name string) (string, error) {
+	// TODO: implement creation
+	// For now, return a dummy API key
+	return "dummy-api-key-" + name, nil
 }
