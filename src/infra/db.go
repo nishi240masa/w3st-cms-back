@@ -36,28 +36,7 @@ func SetupDB() *gorm.DB {
 
 	log.Println("Running database migrations...")
 
-	// Drop existing tables
-	dropSQL := `
-	DROP TABLE IF EXISTS audit_logs CASCADE;
-	DROP TABLE IF EXISTS user_permissions CASCADE;
-	DROP TABLE IF EXISTS content_versions CASCADE;
-	DROP TABLE IF EXISTS media_assets CASCADE;
-	DROP TABLE IF EXISTS api_key_collections CASCADE;
-	DROP TABLE IF EXISTS api_keys CASCADE;
-	DROP TABLE IF EXISTS api_kind_relation CASCADE;
-	DROP TABLE IF EXISTS list_options CASCADE;
-	DROP TABLE IF EXISTS content_entries CASCADE;
-	DROP TABLE IF EXISTS entries CASCADE;
-	DROP TABLE IF EXISTS api_fields CASCADE;
-	DROP TABLE IF EXISTS field_data CASCADE;
-	DROP TABLE IF EXISTS api_collections CASCADE;
-	DROP TABLE IF EXISTS users CASCADE;
-	`
-	if err := db.Exec(dropSQL).Error; err != nil {
-		log.Fatalf("Error executing drop SQL: %v", err)
-	}
-
-	// Migrations
+	// Create tables if they don't exist
 	createSQL := `
 	CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
@@ -73,10 +52,9 @@ func SetupDB() *gorm.DB {
 	);
 
 	-- api_collections: スキーマ（エンティティ）を定義
-	CREATE TABLE api_collections (
+	CREATE TABLE IF NOT EXISTS api_collections (
 		id SERIAL PRIMARY KEY,
 		user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-		project_id INT NOT NULL, -- プロジェクトID
 		name VARCHAR(100) NOT NULL, -- コレクション名 ex) 'ユーザー', '商品'
 		description TEXT, -- 説明 ex) 'ユーザー情報を管理するコレクション'
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -84,7 +62,7 @@ func SetupDB() *gorm.DB {
 	);
 
 	-- api_fields: 各スキーマのフィールド定義
-	CREATE TABLE api_fields (
+	CREATE TABLE IF NOT EXISTS api_fields (
 		id SERIAL PRIMARY KEY,
 		collection_id INT NOT NULL REFERENCES api_collections(id) ON DELETE CASCADE,
 		field_id VARCHAR(100) NOT NULL, -- 内部的なキー ex) 'user_id', 'product_name'
@@ -97,7 +75,7 @@ func SetupDB() *gorm.DB {
 	);
 
 	-- field_data: 各スキーマのフィールド定義 (互換性用)
-	CREATE TABLE field_data (
+	CREATE TABLE IF NOT EXISTS field_data (
 		id SERIAL PRIMARY KEY,
 		project_id INT NOT NULL, -- プロジェクトID
 		collection_id INT NOT NULL REFERENCES api_collections(id) ON DELETE CASCADE,
@@ -111,9 +89,8 @@ func SetupDB() *gorm.DB {
 	);
 
 	-- content_entries: 実際のレコード（エントリ）を管理
-	CREATE TABLE content_entries (
+	CREATE TABLE IF NOT EXISTS content_entries (
 		id SERIAL PRIMARY KEY,
-		project_id INT NOT NULL, -- プロジェクトID
 		collection_id INT NOT NULL REFERENCES api_collections(id) ON DELETE CASCADE,
 		data JSONB NOT NULL, -- エントリのデータ (JSON形式で保存)
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -148,10 +125,9 @@ func SetupDB() *gorm.DB {
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
 
-	CREATE TABLE api_keys (
+	CREATE TABLE IF NOT EXISTS api_keys (
 		id SERIAL PRIMARY KEY,
 		user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-		project_id INT NOT NULL,                         -- プロジェクトID
 		name VARCHAR(100),                              -- 任意の名前（管理用）
 		key VARCHAR(255) UNIQUE NOT NULL,               -- 発行されたAPIキー文字列
 		ip_whitelist TEXT[],                            -- 許可されたIPアドレス（空配列は無制限）
@@ -161,7 +137,7 @@ func SetupDB() *gorm.DB {
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
 
-	CREATE TABLE api_key_collections (
+	CREATE TABLE IF NOT EXISTS api_key_collections (
 		api_key_id INT NOT NULL REFERENCES api_keys(id) ON DELETE CASCADE,
 		collection_id INT NOT NULL REFERENCES api_collections(id) ON DELETE CASCADE,
 		PRIMARY KEY (api_key_id, collection_id)
@@ -216,6 +192,36 @@ func SetupDB() *gorm.DB {
 	`
 	if err := db.Exec(createSQL).Error; err != nil {
 		log.Fatalf("Error executing table creation: %v", err)
+	}
+
+	// Alter tables to add project_id if not exists
+	alterSQL := `
+	-- Add project_id to api_collections if not exists
+	DO $$
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'api_collections' AND column_name = 'project_id') THEN
+			ALTER TABLE api_collections ADD COLUMN project_id INT NOT NULL DEFAULT 1;
+		END IF;
+	END $$;
+
+	-- Add project_id to content_entries if not exists
+	DO $$
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'content_entries' AND column_name = 'project_id') THEN
+			ALTER TABLE content_entries ADD COLUMN project_id INT NOT NULL DEFAULT 1;
+		END IF;
+	END $$;
+
+	-- Add project_id to api_keys if not exists
+	DO $$
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'api_keys' AND column_name = 'project_id') THEN
+			ALTER TABLE api_keys ADD COLUMN project_id INT NOT NULL DEFAULT 1;
+		END IF;
+	END $$;
+	`
+	if err := db.Exec(alterSQL).Error; err != nil {
+		log.Fatalf("Error executing alter SQL: %v", err)
 	}
 
 	// Create trigger functions and triggers
