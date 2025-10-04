@@ -36,6 +36,27 @@ func SetupDB() *gorm.DB {
 
 	log.Println("Running database migrations...")
 
+	// Drop existing tables
+	dropSQL := `
+	DROP TABLE IF EXISTS audit_logs CASCADE;
+	DROP TABLE IF EXISTS user_permissions CASCADE;
+	DROP TABLE IF EXISTS content_versions CASCADE;
+	DROP TABLE IF EXISTS media_assets CASCADE;
+	DROP TABLE IF EXISTS api_key_collections CASCADE;
+	DROP TABLE IF EXISTS api_keys CASCADE;
+	DROP TABLE IF EXISTS api_kind_relation CASCADE;
+	DROP TABLE IF EXISTS list_options CASCADE;
+	DROP TABLE IF EXISTS content_entries CASCADE;
+	DROP TABLE IF EXISTS entries CASCADE;
+	DROP TABLE IF EXISTS api_fields CASCADE;
+	DROP TABLE IF EXISTS field_data CASCADE;
+	DROP TABLE IF EXISTS api_collections CASCADE;
+	DROP TABLE IF EXISTS users CASCADE;
+	`
+	if err := db.Exec(dropSQL).Error; err != nil {
+		log.Fatalf("Error executing drop SQL: %v", err)
+	}
+
 	// Migrations
 	createSQL := `
 	CREATE EXTENSION IF NOT EXISTS "pgcrypto";
