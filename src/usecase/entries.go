@@ -12,13 +12,13 @@ type EntriesUsecase interface {
 }
 
 type entriesUsecase struct {
-	entriesRepo       repositories.EntriesRepository
+	entriesRepo        repositories.EntriesRepository
 	collectionsUsecase CollectionsUsecase
 }
 
 func NewEntriesUsecase(entriesRepo repositories.EntriesRepository, collectionsUsecase CollectionsUsecase) EntriesUsecase {
 	return &entriesUsecase{
-		entriesRepo:       entriesRepo,
+		entriesRepo:        entriesRepo,
 		collectionsUsecase: collectionsUsecase,
 	}
 }

@@ -47,7 +47,7 @@ func JwtAuthMiddleware(authUsecase usecase.JwtUsecase) gin.HandlerFunc {
 func ApiKeyAuthMiddleware(apiKeyUsecase usecase.ApiKeyUsecase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// API keyをヘッダーから取得
-		apiKey := c.Request.Header.Get("X-API-Key")
+		apiKey := c.Request.Header.Get("X-Api-Key")
 
 		// API keyの存在を確認
 		if apiKey == "" {

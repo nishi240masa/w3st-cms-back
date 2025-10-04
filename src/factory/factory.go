@@ -14,12 +14,10 @@ type Factory interface {
 	InitAuthUsecase() usecase.JwtUsecase
 	InitApiKeyUsecase() usecase.ApiKeyUsecase
 	InitApiKeyController() *controllers.ApiKeyController
-	InitCollectionController() *controllers.CollectionsController
 	InitSDKCollectionsController() *controllers.SDKCollectionsController
 	InitGUICollectionsController() *controllers.GUICollectionsController
 	InitSDKEntriesController() *controllers.SDKEntriesController
 	InitGUIEntriesController() *controllers.GUIEntriesController
-	InitEntriesController() *controllers.EntriesController
 	InitFieldController() *controllers.FieldController
 	InitMediaController() *controllers.MediaController
 	InitAuditController() *controllers.AuditController
@@ -58,13 +56,6 @@ func (f factory) InitApiKeyController() *controllers.ApiKeyController {
 	return controllers.NewApiKeyController(apiKeyUsecase)
 }
 
-func (f factory) InitCollectionController() *controllers.CollectionsController {
-	collectionRepo := infrastructure.NewCollectionsRepository(f.DB)
-	collectionUsecase := usecase.NewCollectionsUsecase(collectionRepo)
-
-	return controllers.NewCollectionsController(collectionUsecase)
-}
-
 func (f factory) InitSDKCollectionsController() *controllers.SDKCollectionsController {
 	collectionRepo := infrastructure.NewCollectionsRepository(f.DB)
 	collectionUsecase := usecase.NewCollectionsUsecase(collectionRepo)
@@ -97,15 +88,6 @@ func (f factory) InitGUIEntriesController() *controllers.GUIEntriesController {
 	entriesUsecase := usecase.NewEntriesUsecase(entriesRepo, collectionUsecase)
 
 	return controllers.NewGUIEntriesController(entriesUsecase)
-}
-
-func (f factory) InitEntriesController() *controllers.EntriesController {
-	entriesRepo := infrastructure.NewEntriesRepository(f.DB)
-	collectionRepo := infrastructure.NewCollectionsRepository(f.DB)
-	collectionUsecase := usecase.NewCollectionsUsecase(collectionRepo)
-	entriesUsecase := usecase.NewEntriesUsecase(entriesRepo, collectionUsecase)
-
-	return controllers.NewEntriesController(entriesUsecase)
 }
 
 func (f factory) InitFieldController() *controllers.FieldController {
