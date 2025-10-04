@@ -9,5 +9,5 @@ import (
 type FieldRepository interface {
 	CreateField(newField *models.FieldData) error
 	UpdateField(newField *models.FieldData) error
-	DeleteFieldById(userId uuid.UUID, fieldId uuid.UUID) error
+	DeleteFieldById(projectId int, fieldId uuid.UUID) error
 }

@@ -5,6 +5,7 @@
 ## 目次
 
 
+
 - [概要](#概要)
 
 - [対象ユーザー](#対象ユーザー)
@@ -13,10 +14,11 @@
 
 - [主要機能](#主要機能)
 
+- [APIの使い方](#apiの使い方)
+
 - [API設計](#api設計)
 
 - [差別化ポイント](#差別化ポイントmicrocmsなどと比較)
-
 
 
 ---
@@ -191,17 +193,81 @@ APIキー管理（個別にキーを発行してアクセスコントロール�
 
 APIキー単位でアクセス許可されるコレクションを紐付ける中間テーブル
 
-| カラム名                | 型            | 説明                     |
-|---------------------|--------------|------------------------| 
-| id                  | SERIAL       | APIキーID                |
-| user_id             | UUID         | キーの所有者ユーザーID           |
-| name                | VARCHAR(100) | キーの名前（管理用）             |
-| key                 | VARCHAR(255) | 実際に発行されたAPIキー文字列（ユニーク） |
-| ip_whitelist        | TEXT[]       | 許可されたIPリスト（空なら無制限）     |
-| expire_at           | TIMESTAMP    | 有効期限（NULLなら無期限）        |
-| revoked             | BOOLEAN      | 無効化されているか              |
-| rate_limit_per_hour | INT          | 1時間あたりのリクエスト上限         |
-| created_at          | TIMESTAMP    | 作成日時                   |
+| カラム名        | 型     | 説明         |
+|-------------|-------|------------|
+| api_key_id  | INT   | APIキーID    |
+| collection_id | INT   | コレクションID |
+
+
+
+---
+
+### audit_logs
+
+監査ログを記録
+
+| カラム名     | 型            | 説明       |
+|----------|--------------|----------|
+| id       | UUID         | ログID     |
+| user_id  | UUID         | ユーザーID   |
+| action   | VARCHAR(50)  | アクション    |
+| resource | VARCHAR(255) | リソース     |
+| created_at | TIMESTAMP    | 作成日時     |
+| details  | TEXT         | 詳細       |
+
+
+
+---
+
+### media_assets
+
+メディアアセット管理
+
+| カラム名     | 型            | 説明     |
+|----------|--------------|--------|
+| id       | UUID         | メディアID |
+| name     | VARCHAR(255) | 名前     |
+| type     | VARCHAR(50)  | タイプ    |
+| path     | TEXT         | パス     |
+| size     | BIGINT       | サイズ    |
+| user_id  | UUID         | ユーザーID |
+| created_at | TIMESTAMP    | 作成日時   |
+| updated_at | TIMESTAMP    | 更新日時   |
+
+
+
+---
+
+### user_permissions
+
+ユーザー権限管理
+
+| カラム名      | 型            | 説明     |
+|-----------|--------------|--------|
+| id        | UUID         | 権限ID   |
+| user_id   | UUID         | ユーザーID |
+| permission | VARCHAR(50)  | 権限     |
+| resource  | VARCHAR(255) | リソース   |
+| created_at | TIMESTAMP    | 作成日時   |
+| updated_at | TIMESTAMP    | 更新日時   |
+
+
+
+---
+
+### content_versions
+
+コンテンツバージョン管理
+
+| カラム名      | 型         | 説明       |
+|-----------|-----------|----------|
+| id        | UUID      | バージョンID |
+| content_id | UUID      | コンテンツID |
+| version   | INT       | バージョン番号 |
+| data      | JSONB     | データ      |
+| user_id   | UUID      | ユーザーID   |
+| created_at | TIMESTAMP | 作成日時     |
+| updated_at | TIMESTAMP | 更新日時     |
 
 
 
@@ -226,55 +292,227 @@ APIキー単位でアクセス許可されるコレクションを紐付ける�
 
 - 自動タイムスタンプ更新
 
+- メディアアセット管理
+
+- ユーザー権限管理
+
+- コンテンツバージョン管理
+
+- 監査ログ記録
+
 
 
 ---
 
+## APIの使い方
+
+このセクションでは、w3st CMS APIの基本的な使い方をステップバイステップで説明します。すべてのAPIリクエストには適切な認証が必要です。
+
+### 1. ユーザー登録とログイン
+
+まず、ユーザーとして登録し、JWTトークンを取得します。
+
+#### ユーザー登録
+```bash
+POST /users/signup
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "securepassword"
+}
+```
+
+#### ログイン
+```bash
+POST /users/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "securepassword"
+}
+```
+
+レスポンスからJWTトークンを取得し、以後のリクエストのAuthorizationヘッダーに `Bearer <token>` を設定してください。
+
+### 2. コレクションの作成
+
+コンテンツを管理するためのコレクション（スキーマ）を作成します。
+
+```bash
+POST /collections
+Authorization: Bearer <your-jwt-token>
+Content-Type: application/json
+
+{
+  "name": "Products",
+  "description": "Product catalog"
+}
+```
+
+### 3. フィールドの追加
+
+作成したコレクションにフィールドを定義します。
+
+```bash
+POST /collections/{collectionId}/fields
+Authorization: Bearer <your-jwt-token>
+Content-Type: application/json
+
+{
+  "field_id": "name",
+  "view_name": "Product Name",
+  "field_type": "text",
+  "is_required": true
+}
+```
+
+### 4. エントリの作成と管理
+
+コレクションにコンテンツエントリを追加します。
+
+#### エントリ作成
+```bash
+POST /collections/{collectionId}/entries
+Content-Type: application/json
+
+{
+  "data": {
+    "name": "Sample Product"
+  }
+}
+```
+
+#### エントリ取得（公開API）
+```bash
+GET /collections/{collectionId}/entries
+X-API-Key: <your-api-key>
+```
+
+### 5. APIキーの発行
+
+公開APIアクセス用のAPIキーを作成します。
+
+```bash
+POST /apikeys
+Authorization: Bearer <your-jwt-token>
+Content-Type: application/json
+
+{
+  "name": "Public API Key",
+  "collection_ids": [1, 2],
+  "ip_whitelist": ["192.168.1.1"],
+  "rate_limit_per_hour": 1000
+}
+```
+
+### 6. メディアアセットの管理
+
+画像などのメディアファイルをアップロードします。
+
+#### アップロード
+```bash
+POST /media
+Authorization: Bearer <your-jwt-token>
+Content-Type: application/json
+
+{
+  "name": "product-image.jpg",
+  "type": "image/jpeg",
+  "path": "/uploads/product-image.jpg",
+  "size": 1024000
+}
+```
+
+#### 一覧取得
+```bash
+GET /media
+Authorization: Bearer <your-jwt-token>
+```
+
+### 7. 権限管理
+
+ユーザーの権限を管理します。
+
+#### 権限付与
+```bash
+POST /permissions/grant
+Authorization: Bearer <your-jwt-token>
+Content-Type: application/json
+
+{
+  "permission": "read",
+  "resource": "collection:1"
+}
+```
+
+#### 権限チェック
+```bash
+GET /permissions/check?permission=read&resource=collection:1
+Authorization: Bearer <your-jwt-token>
+```
+
+### 8. コンテンツバージョン管理
+
+エントリのバージョンを管理します。
+
+#### バージョン作成
+```bash
+POST /versions
+Authorization: Bearer <your-jwt-token>
+Content-Type: application/json
+
+{
+  "content_id": "uuid-of-content",
+  "data": {"name": "Updated Product"}
+}
+```
+
+#### バージョン一覧
+```bash
+GET /versions/{contentID}
+Authorization: Bearer <your-jwt-token>
+```
+
+#### バージョン復元
+```bash
+POST /versions/{contentID}/restore/{versionID}
+Authorization: Bearer <your-jwt-token>
+```
+
+### 9. 監査ログの確認
+
+システムのアクティビティログを確認します。
+
+#### ログ記録
+```bash
+POST /audit/log
+Authorization: Bearer <your-jwt-token>
+Content-Type: application/json
+
+{
+  "action": "create",
+  "resource": "collection:1",
+  "details": "Created new collection"
+}
+```
+
+#### ログ取得
+```bash
+GET /audit/logs/user
+Authorization: Bearer <your-jwt-token>
+```
+
+詳細なAPI仕様については `api-document.yaml` を参照してください。
+
+---
 
 
 ## API設計
 
-
-### コレクション作成 API（tx使用）
-
-**POST**  `/api/collections`
-**Request Body**
-
-
-```json
-{
-  "user_id": "UUID",
-  "name": "コレクション名",
-  "description": "説明",
-  "fields": [
-    {
-      "field_id": "product_name",
-      "view_name": "商品名",
-      "field_type": "text"
-    },
-    {
-      "field_id": "price",
-      "view_name": "価格",
-      "field_type": "number"
-    }
-  ]
-}
-```
-
-**Response**
-
-
-```json
-{
-  "collection_id": 1,
-  "message": "Collection created successfully"
-}
-```
-
-
-※ この一連の処理は**トランザクション(tx)**でまとめる
-
-
+詳細なAPI仕様は `api-document.yaml` を参照してください。
 
 ---
 
@@ -297,6 +535,14 @@ APIキー単位でアクセス許可されるコレクションを紐付ける�
 - 高速なカスタマイズ性（GUI設計予定）
 
 - ローカル開発モード（オフラインサポート）を計画中
+
+- メディアアセット管理機能
+
+- 詳細な権限管理システム
+
+- コンテンツバージョン管理
+
+- 監査ログによるセキュリティ強化
 
 
 

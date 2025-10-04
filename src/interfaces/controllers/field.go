@@ -11,7 +11,6 @@ import (
 	"w3st/dto"
 	myerrors "w3st/errors"
 	"w3st/usecase"
-	"w3st/utils"
 )
 
 type FieldController struct {
@@ -38,23 +37,17 @@ func (f *FieldController) Create(ctx *gin.Context) {
 		return
 	}
 
-	//　userID
-	userID, exists := ctx.Get("userID")
+	// projectID
+	projectID, exists := ctx.Get("projectID")
 	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Project ID not found in context"})
 		return
 	}
 
-	// userIDはstring型であることを確認
-	userIDStr, ok := userID.(string)
+	// projectIDはint型であることを確認
+	projectIDInt, ok := projectID.(int)
 	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
-	userUuid, err := utils.StringToUUID(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project ID"})
 		return
 	}
 
@@ -67,6 +60,7 @@ func (f *FieldController) Create(ctx *gin.Context) {
 
 	// フィールドの作成
 	newField := &models.FieldData{
+		ProjectID:    projectIDInt,
 		CollectionID: collectionIdInt,
 		FieldID:      input.FieldID,
 		ViewName:     input.ViewName,
@@ -75,7 +69,7 @@ func (f *FieldController) Create(ctx *gin.Context) {
 		DefaultValue: input.DefaultValue,
 	}
 
-	err = f.fieldUsecase.Create(userUuid, newField)
+	err = f.fieldUsecase.Create(projectIDInt, newField)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {
@@ -112,23 +106,17 @@ func (f *FieldController) Update(ctx *gin.Context) {
 		return
 	}
 
-	//　userID
-	userID, exists := ctx.Get("userID")
+	// projectID
+	projectID, exists := ctx.Get("projectID")
 	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Project ID not found in context"})
 		return
 	}
 
-	// userIDはstring型であることを確認
-	userIDStr, ok := userID.(string)
+	// projectIDはint型であることを確認
+	projectIDInt, ok := projectID.(int)
 	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
-	userUuid, err := utils.StringToUUID(userIDStr)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project ID"})
 		return
 	}
 
@@ -140,6 +128,7 @@ func (f *FieldController) Update(ctx *gin.Context) {
 	}
 
 	newField := &models.FieldData{
+		ProjectID:    projectIDInt,
 		CollectionID: collectionIdInt,
 		FieldID:      input.FieldID,
 		ViewName:     input.ViewName,
@@ -149,7 +138,7 @@ func (f *FieldController) Update(ctx *gin.Context) {
 	}
 
 	// フィールドの更新
-	err = f.fieldUsecase.Update(userUuid, newField)
+	err = f.fieldUsecase.Update(projectIDInt, newField)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {
@@ -176,21 +165,21 @@ func (f *FieldController) Delete(ctx *gin.Context) {
 		return
 	}
 
-	// userID
-	userID, exists := ctx.Get("userID")
+	// projectID
+	projectID, exists := ctx.Get("projectID")
 	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Project ID not found in context"})
 		return
 	}
 
-	userIDStr, ok := userID.(string)
+	projectIDInt, ok := projectID.(int)
 	if !ok {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project ID"})
 		return
 	}
 
 	// フィールドを削除
-	err := f.fieldUsecase.Delete(userIDStr, fieldId)
+	err := f.fieldUsecase.Delete(projectIDInt, fieldId)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {

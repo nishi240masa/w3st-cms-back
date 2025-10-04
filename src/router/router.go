@@ -49,11 +49,21 @@ func Init() {
 	// Auth
 	authUsecase := f.InitAuthUsecase()
 
-	// Collections
-	collections := r.Group("/collections")
-	collectionController := f.InitCollectionController()
-	// Fields
-	fieldController := f.InitFieldController()
+	// API Key Auth
+	apiKeyUsecase := f.InitApiKeyUsecase()
+	apiKeyController := f.InitApiKeyController()
+
+	// Collections - SDK専用 (APIキー認証)
+	sdkCollections := r.Group("/collections")
+	sdkCollections.Use(middlewares.ApiKeyAuthMiddleware(apiKeyUsecase))
+	sdkCollectionController := f.InitSDKCollectionsController()
+	sdkEntriesController := f.InitSDKEntriesController()
+
+	// API - GUI専用 (JWT認証)
+	api := r.Group("/api")
+	api.Use(middlewares.JwtAuthMiddleware(authUsecase))
+	guiCollectionController := f.InitGUICollectionsController()
+	guiEntriesController := f.InitGUIEntriesController()
 
 	// Media
 	mediaController := f.InitMediaController()
@@ -76,47 +86,55 @@ func Init() {
 	// ユーザー情報取得
 	users.GET("/me", middlewares.JwtAuthMiddleware(authUsecase), userController.GetUserInfo)
 
-	// Collectionを追加
-	collections.POST("", middlewares.JwtAuthMiddleware(authUsecase), collectionController.MakeCollection)
+	// API Keys - GUI専用
+	api.POST("/api-keys", apiKeyController.CreateApiKey)
 
+	// SDK専用ルート
 	// Collection一覧を取得
-	collections.GET("", middlewares.JwtAuthMiddleware(authUsecase), collectionController.GetCollectionByUserId)
+	sdkCollections.GET("", sdkCollectionController.GetCollectionByProjectId)
+	// Collection詳細取得
+	sdkCollections.GET("/:collectionId", sdkCollectionController.GetCollectionsByCollectionId)
+	// Entries - SDK専用
+	sdkEntries := sdkCollections.Group("/:collectionId/entries")
+	sdkEntries.GET("", sdkEntriesController.GetEntries)
 
-	// Collectionを取得
+	// GUI専用ルート
+	// Collection作成
+	api.POST("/collections", guiCollectionController.MakeCollection)
 	// Fields
-	fields := collections.Group("/:collectionId/fields")
-	fields.POST("", middlewares.JwtAuthMiddleware(authUsecase), fieldController.Create)
-	fields.PUT("/:fieldId", middlewares.JwtAuthMiddleware(authUsecase), fieldController.Update)
-	fields.DELETE("/:fieldId", middlewares.JwtAuthMiddleware(authUsecase), fieldController.Delete)
-	collections.GET("/:collectionId", middlewares.JwtAuthMiddleware(authUsecase), collectionController.GetCollectionsByCollectionId)
+	apiFields := api.Group("/collections/:collectionId/fields")
+	apiFields.POST("", guiCollectionController.CreateField)
+	apiFields.PUT("/:fieldId", guiCollectionController.UpdateField)
+	apiFields.DELETE("/:fieldId", guiCollectionController.DeleteField)
 
-	// Media routes
-	media := r.Group("/media")
-	media.POST("", middlewares.JwtAuthMiddleware(authUsecase), mediaController.Upload)
-	media.GET("", middlewares.JwtAuthMiddleware(authUsecase), mediaController.GetByUserID)
-	media.GET("/:id", middlewares.JwtAuthMiddleware(authUsecase), mediaController.GetByID)
-	media.DELETE("/:id", middlewares.JwtAuthMiddleware(authUsecase), mediaController.Delete)
+	// Entries - GUI専用
+	guiEntries := api.Group("/collections/:collectionId/entries")
+	guiEntries.GET("", guiEntriesController.GetEntries)
+	guiEntries.POST("", guiEntriesController.CreateEntry)
 
-	// Versions routes
-	versions := r.Group("/versions")
-	versions.POST("", middlewares.JwtAuthMiddleware(authUsecase), versionController.CreateVersion)
-	versions.GET("/:contentID", middlewares.JwtAuthMiddleware(authUsecase), versionController.GetVersionsByContentID)
-	versions.GET("/:contentID/latest", middlewares.JwtAuthMiddleware(authUsecase), versionController.GetLatestVersion)
-	versions.POST("/:contentID/restore/:versionID", middlewares.JwtAuthMiddleware(authUsecase), versionController.RestoreVersion)
+	// Media routes - GUI専用
+	api.POST("/media", mediaController.Upload)
+	api.GET("/media", mediaController.GetByUserID)
+	api.GET("/media/:id", mediaController.GetByID)
+	api.DELETE("/media/:id", mediaController.Delete)
 
-	// Permissions routes
-	permissions := r.Group("/permissions")
-	permissions.GET("/check", middlewares.JwtAuthMiddleware(authUsecase), permissionController.CheckPermission)
-	permissions.POST("/grant", middlewares.JwtAuthMiddleware(authUsecase), permissionController.GrantPermission)
-	permissions.POST("/revoke", middlewares.JwtAuthMiddleware(authUsecase), permissionController.RevokePermission)
-	permissions.GET("/user", middlewares.JwtAuthMiddleware(authUsecase), permissionController.GetPermissionsByUser)
+	// Versions routes - GUI専用
+	api.POST("/versions", versionController.CreateVersion)
+	api.GET("/versions/:contentID", versionController.GetVersionsByContentID)
+	api.GET("/versions/:contentID/latest", versionController.GetLatestVersion)
+	api.POST("/versions/:contentID/restore/:versionID", versionController.RestoreVersion)
 
-	// Audit routes
-	audit := r.Group("/audit")
-	audit.POST("", middlewares.JwtAuthMiddleware(authUsecase), auditController.LogAction)
-	audit.GET("/user", middlewares.JwtAuthMiddleware(authUsecase), auditController.GetLogsByUser)
-	audit.GET("/action/:action", middlewares.JwtAuthMiddleware(authUsecase), auditController.GetLogsByAction)
-	audit.GET("/all", middlewares.JwtAuthMiddleware(authUsecase), auditController.GetAllLogs)
+	// Permissions routes - GUI専用
+	api.GET("/permissions/check", permissionController.CheckPermission)
+	api.POST("/permissions/grant", permissionController.GrantPermission)
+	api.POST("/permissions/revoke", permissionController.RevokePermission)
+	api.GET("/permissions/user", permissionController.GetPermissionsByUser)
+
+	// Audit routes - GUI専用
+	api.POST("/audit", auditController.LogAction)
+	api.GET("/audit/user", auditController.GetLogsByUser)
+	api.GET("/audit/action/:action", auditController.GetLogsByAction)
+	api.GET("/audit/all", auditController.GetAllLogs)
 
 	// 指定されたポートでサーバーを開始
 	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {

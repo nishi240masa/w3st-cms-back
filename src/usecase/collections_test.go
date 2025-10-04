@@ -58,7 +58,7 @@ func TestCollectionsUsecase_Make_Failure(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestCollectionsUsecase_GetCollectionByUserId_Success(t *testing.T) {
+func TestCollectionsUsecase_GetCollectionByProjectId_Success(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -66,19 +66,18 @@ func TestCollectionsUsecase_GetCollectionByUserId_Success(t *testing.T) {
 	mockCollectionsRepo := mockRepositories.NewMockCollectionsRepository(ctrl)
 	uc := usecase.NewCollectionsUsecase(mockCollectionsRepo)
 
-	userID := uuid.New()
+	projectID := 1
 	expectedCollections := []models.ApiCollection{
 		{
-			Name:   "Collection 1",
-			UserID: userID,
+			Name: "Collection 1",
 		},
 	}
 
 	mockCollectionsRepo.EXPECT().
-		GetCollectionByUserId(userID).
+		GetCollectionByProjectId(projectID).
 		Return(expectedCollections, nil)
 
-	collections, err := uc.GetCollectionByUserId(userID)
+	collections, err := uc.GetCollectionByProjectId(projectID)
 
 	require.NoError(t, err)
 	assert.Equal(t, expectedCollections, collections)
@@ -93,18 +92,17 @@ func TestCollectionsUsecase_GetCollectionsByCollectionId_Success(t *testing.T) {
 	uc := usecase.NewCollectionsUsecase(mockCollectionsRepo)
 
 	collectionID := 1
-	userID := uuid.New()
+	projectID := 1
 	expectedCollection := &models.ApiCollection{
-		ID:     collectionID,
-		Name:   "Test Collection",
-		UserID: userID,
+		ID:   collectionID,
+		Name: "Test Collection",
 	}
 
 	mockCollectionsRepo.EXPECT().
-		GetCollectionsByCollectionId(collectionID, userID).
+		GetCollectionsByCollectionId(collectionID, projectID).
 		Return(expectedCollection, nil)
 
-	collection, err := uc.GetCollectionsByCollectionId(collectionID, userID)
+	collection, err := uc.GetCollectionsByCollectionId(collectionID, projectID)
 
 	require.NoError(t, err)
 	assert.Equal(t, expectedCollection, collection)

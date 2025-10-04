@@ -4,14 +4,12 @@ import (
 	"w3st/domain/models"
 	"w3st/domain/repositories"
 	myerrors "w3st/errors"
-
-	"github.com/google/uuid"
 )
 
 type CollectionsUsecase interface {
 	Make(newCollection *models.ApiCollection) error
-	GetCollectionByUserId(userId uuid.UUID) ([]models.ApiCollection, error)
-	GetCollectionsByCollectionId(collectionId int, userId uuid.UUID) (*models.ApiCollection, error)
+	GetCollectionByProjectId(projectId int) ([]models.ApiCollection, error)
+	GetCollectionsByCollectionId(collectionId int, projectId int) (*models.ApiCollection, error)
 }
 
 type collectionsUsecase struct {
@@ -34,16 +32,16 @@ func (c *collectionsUsecase) Make(newCollection *models.ApiCollection) error {
 	return nil
 }
 
-func (c *collectionsUsecase) GetCollectionByUserId(userId uuid.UUID) ([]models.ApiCollection, error) {
-	collection, err := c.collectionsRepo.GetCollectionByUserId(userId)
+func (c *collectionsUsecase) GetCollectionByProjectId(projectId int) ([]models.ApiCollection, error) {
+	collection, err := c.collectionsRepo.GetCollectionByProjectId(projectId)
 	if err != nil {
-		return nil, myerrors.WrapDomainError("collectionsUsecase.GetCollectionByUserId", err)
+		return nil, myerrors.WrapDomainError("collectionsUsecase.GetCollectionByProjectId", err)
 	}
 	return collection, nil
 }
 
-func (c *collectionsUsecase) GetCollectionsByCollectionId(collectionId int, userId uuid.UUID) (*models.ApiCollection, error) {
-	collection, err := c.collectionsRepo.GetCollectionsByCollectionId(collectionId, userId)
+func (c *collectionsUsecase) GetCollectionsByCollectionId(collectionId int, projectId int) (*models.ApiCollection, error) {
+	collection, err := c.collectionsRepo.GetCollectionsByCollectionId(collectionId, projectId)
 	if err != nil {
 		return nil, myerrors.WrapDomainError("collectionsUsecase.GetCollectionsByCollectionId", err)
 	}

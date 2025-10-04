@@ -7,7 +7,6 @@ import (
 	"w3st/domain/models"
 	myerrors "w3st/errors"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -33,9 +32,9 @@ func (r *CollectionsRepository) CreateCollection(newCollection *models.ApiCollec
 	return nil
 }
 
-func (r *CollectionsRepository) GetCollectionByUserId(userId uuid.UUID) ([]models.ApiCollection, error) {
+func (r *CollectionsRepository) GetCollectionByProjectId(projectId int) ([]models.ApiCollection, error) {
 	var collection []models.ApiCollection
-	result := r.db.Where("user_id = ?", userId).Find(&collection)
+	result := r.db.Where("project_id = ?", projectId).Find(&collection)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -51,9 +50,9 @@ func (r *CollectionsRepository) GetCollectionByUserId(userId uuid.UUID) ([]model
 	return collection, nil
 }
 
-func (r *CollectionsRepository) GetCollectionsByCollectionId(collectionId int, userId uuid.UUID) (*models.ApiCollection, error) {
+func (r *CollectionsRepository) GetCollectionsByCollectionId(collectionId int, projectId int) (*models.ApiCollection, error) {
 	var collection models.ApiCollection
-	result := r.db.Where("id = ? AND user_id = ?", collectionId, userId).First(&collection)
+	result := r.db.Where("id = ? AND project_id = ?", collectionId, projectId).First(&collection)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {

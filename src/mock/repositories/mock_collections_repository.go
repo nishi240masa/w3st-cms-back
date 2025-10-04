@@ -10,7 +10,6 @@ import (
 	models "w3st/domain/models"
 
 	gomock "github.com/golang/mock/gomock"
-	uuid "github.com/google/uuid"
 )
 
 // MockCollectionsRepository is a mock of CollectionsRepository interface.
@@ -50,32 +49,32 @@ func (mr *MockCollectionsRepositoryMockRecorder) CreateCollection(newCollection 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCollection", reflect.TypeOf((*MockCollectionsRepository)(nil).CreateCollection), newCollection)
 }
 
-// GetCollectionByUserId mocks base method.
-func (m *MockCollectionsRepository) GetCollectionByUserId(userId uuid.UUID) ([]models.ApiCollection, error) {
+// GetCollectionByProjectId mocks base method.
+func (m *MockCollectionsRepository) GetCollectionByProjectId(projectId int) ([]models.ApiCollection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCollectionByUserId", userId)
+	ret := m.ctrl.Call(m, "GetCollectionByProjectId", projectId)
 	ret0, _ := ret[0].([]models.ApiCollection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetCollectionByUserId indicates an expected call of GetCollectionByUserId.
-func (mr *MockCollectionsRepositoryMockRecorder) GetCollectionByUserId(userId interface{}) *gomock.Call {
+// GetCollectionByProjectId indicates an expected call of GetCollectionByProjectId.
+func (mr *MockCollectionsRepositoryMockRecorder) GetCollectionByProjectId(projectId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCollectionByUserId", reflect.TypeOf((*MockCollectionsRepository)(nil).GetCollectionByUserId), userId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCollectionByProjectId", reflect.TypeOf((*MockCollectionsRepository)(nil).GetCollectionByProjectId), projectId)
 }
 
 // GetCollectionsByCollectionId mocks base method.
-func (m *MockCollectionsRepository) GetCollectionsByCollectionId(collectionId int, userId uuid.UUID) (*models.ApiCollection, error) {
+func (m *MockCollectionsRepository) GetCollectionsByCollectionId(collectionId, projectId int) (*models.ApiCollection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCollectionsByCollectionId", collectionId, userId)
+	ret := m.ctrl.Call(m, "GetCollectionsByCollectionId", collectionId, projectId)
 	ret0, _ := ret[0].(*models.ApiCollection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCollectionsByCollectionId indicates an expected call of GetCollectionsByCollectionId.
-func (mr *MockCollectionsRepositoryMockRecorder) GetCollectionsByCollectionId(collectionId, userId interface{}) *gomock.Call {
+func (mr *MockCollectionsRepositoryMockRecorder) GetCollectionsByCollectionId(collectionId, projectId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCollectionsByCollectionId", reflect.TypeOf((*MockCollectionsRepository)(nil).GetCollectionsByCollectionId), collectionId, userId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCollectionsByCollectionId", reflect.TypeOf((*MockCollectionsRepository)(nil).GetCollectionsByCollectionId), collectionId, projectId)
 }

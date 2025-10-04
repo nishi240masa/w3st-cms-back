@@ -16,6 +16,10 @@ tags:
   - name: ListOptions
   - name: Relations
   - name: APIKeys
+  - name: Media
+  - name: Permissions
+  - name: Versions
+  - name: Audit
 
 paths:
   /users/signup:
@@ -344,6 +348,318 @@ paths:
         "204":
           description: 削除成功
 
+  /media:
+    post:
+      tags: [Media]
+      summary: メディアアップロード
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MediaUploadRequest"
+      responses:
+        "201":
+          description: アップロード成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaResponse"
+    get:
+      tags: [Media]
+      summary: ユーザーのメディア一覧取得
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 一覧取得
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MediaResponse"
+
+  /media/{id}:
+    get:
+      tags: [Media]
+      summary: メディア詳細取得
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 詳細取得
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaResponse"
+    delete:
+      tags: [Media]
+      summary: メディア削除
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: 削除成功
+
+  /permissions/check:
+    get:
+      tags: [Permissions]
+      summary: 権限チェック
+      parameters:
+        - name: permission
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: resource
+          in: query
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 権限チェック結果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  has_permission:
+                    type: boolean
+
+  /permissions/grant:
+    post:
+      tags: [Permissions]
+      summary: 権限付与
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermissionRequest"
+      responses:
+        "201":
+          description: 権限付与成功
+
+  /permissions/revoke:
+    post:
+      tags: [Permissions]
+      summary: 権限剥奪
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermissionRequest"
+      responses:
+        "200":
+          description: 権限剥奪成功
+
+  /permissions:
+    get:
+      tags: [Permissions]
+      summary: ユーザーの権限一覧取得
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 一覧取得
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PermissionResponse"
+
+  /versions:
+    post:
+      tags: [Versions]
+      summary: バージョン作成
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VersionCreateRequest"
+      responses:
+        "201":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionResponse"
+
+  /versions/{contentID}:
+    get:
+      tags: [Versions]
+      summary: コンテンツのバージョン一覧取得
+      parameters:
+        - name: contentID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 一覧取得
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VersionResponse"
+
+  /versions/{contentID}/latest:
+    get:
+      tags: [Versions]
+      summary: 最新バージョン取得
+      parameters:
+        - name: contentID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 最新バージョン
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionResponse"
+
+  /versions/{contentID}/restore/{versionID}:
+    post:
+      tags: [Versions]
+      summary: バージョン復元
+      parameters:
+        - name: contentID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: versionID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 復元成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionResponse"
+
+  /audit/log:
+    post:
+      tags: [Audit]
+      summary: アクションログ記録
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditLogRequest"
+      responses:
+        "201":
+          description: ログ記録成功
+
+  /audit/logs/user:
+    get:
+      tags: [Audit]
+      summary: ユーザーのログ一覧取得
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 一覧取得
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogResponse"
+
+  /audit/logs/action/{action}:
+    get:
+      tags: [Audit]
+      summary: アクション別のログ一覧取得
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 一覧取得
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogResponse"
+
+  /audit/logs:
+    get:
+      tags: [Audit]
+      summary: 全ログ一覧取得（管理者用）
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 一覧取得
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogResponse"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -524,3 +840,116 @@ components:
         created_at:
           type: string
           format: date-time
+
+    MediaUploadRequest:
+      type: object
+      required: [name, type, path, size]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        path:
+          type: string
+        size:
+          type: integer
+
+    MediaResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        path:
+          type: string
+        size:
+          type: integer
+        user_id:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+
+    PermissionRequest:
+      type: object
+      required: [permission, resource]
+      properties:
+        permission:
+          type: string
+        resource:
+          type: string
+
+    PermissionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        permission:
+          type: string
+        resource:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+
+    VersionCreateRequest:
+      type: object
+      required: [content_id, data]
+      properties:
+        content_id:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+
+    VersionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        content_id:
+          type: string
+        version:
+          type: integer
+        data:
+          type: string
+        user_id:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+
+    AuditLogRequest:
+      type: object
+      required: [action, resource, details]
+      properties:
+        action:
+          type: string
+        resource:
+          type: string
+        details:
+          type: string
+
+    AuditLogResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        action:
+          type: string
+        resource:
+          type: string
+        details:
+          type: string
+        created_at:
+          type: string
