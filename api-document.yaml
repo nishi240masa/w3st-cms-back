@@ -338,7 +338,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/RelationResponse"
 
-  /api/apikeys:
+  /api/api-keys:
     post:
       tags: [GUI APIKeys]
       summary: APIキーの発行
@@ -619,7 +619,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/VersionResponse"
 
-  /api/audit/log:
+  /api/audit:
     post:
       tags: [GUI Audit]
       summary: アクションログ記録
@@ -635,7 +635,7 @@ paths:
         "201":
           description: ログ記録成功
 
-  /api/audit/logs/user:
+  /api/audit/user:
     get:
       tags: [GUI Audit]
       summary: ユーザーのログ一覧取得
@@ -651,7 +651,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/AuditLogResponse"
 
-  /api/audit/logs/action/{action}:
+  /api/audit/action/{action}:
     get:
       tags: [GUI Audit]
       summary: アクション別のログ一覧取得
@@ -673,7 +673,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/AuditLogResponse"
 
-  /api/audit/logs:
+  /api/audit/all:
     get:
       tags: [GUI Audit]
       summary: 全ログ一覧取得（管理者用）
