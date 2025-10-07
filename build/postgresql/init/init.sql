@@ -91,6 +91,7 @@ CREATE TABLE api_keys (
     project_id INT NOT NULL,                         -- プロジェクトID
     name VARCHAR(100),                              -- 任意の名前（管理用）
     key VARCHAR(255) UNIQUE NOT NULL,               -- 発行されたAPIキー文字列
+    collection_ids INT[] NOT NULL DEFAULT '{}',     -- アクセス可能なコレクションIDリスト
     ip_whitelist TEXT[],                            -- 許可されたIPアドレス（空配列は無制限）
     expire_at TIMESTAMP,                            -- 有効期限（NULLなら無期限）
     revoked BOOLEAN DEFAULT FALSE,                  -- 無効化フラグ

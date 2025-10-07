@@ -47,11 +47,13 @@ func (f factory) InitAuthUsecase() usecase.JwtUsecase {
 }
 
 func (f factory) InitApiKeyUsecase() usecase.ApiKeyUsecase {
-	return usecase.NewApiKeyUsecase()
+	apiKeyRepo := infrastructure.NewApiKeyRepositoryImpl(f.DB)
+	return usecase.NewApiKeyUsecase(apiKeyRepo)
 }
 
 func (f factory) InitApiKeyController() *controllers.ApiKeyController {
-	apiKeyUsecase := usecase.NewApiKeyUsecase()
+	apiKeyRepo := infrastructure.NewApiKeyRepositoryImpl(f.DB)
+	apiKeyUsecase := usecase.NewApiKeyUsecase(apiKeyRepo)
 
 	return controllers.NewApiKeyController(apiKeyUsecase)
 }

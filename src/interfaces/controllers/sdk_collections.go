@@ -25,9 +25,20 @@ func NewSDKCollectionsController(collectionUsecase usecase.CollectionsUsecase) *
 func (c *SDKCollectionsController) GetCollectionByProjectId(ctx *gin.Context) {
 	// プロジェクトIDを取得
 	projectID := ctx.GetInt("projectID")
+	// 許可されたコレクションIDを取得
+	collectionIds, exists := ctx.Get("collectionIds")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Collection IDs not found in context"})
+		return
+	}
+	collectionIdsSlice, ok := collectionIds.([]int)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid collection IDs format"})
+		return
+	}
 
-	// コレクションを取得
-	collection, err := c.collectionUsecase.GetCollectionByProjectId(projectID)
+	// コレクションを取得（フィルタリング済み）
+	collection, err := c.collectionUsecase.GetCollectionByProjectIdForSDK(projectID, collectionIdsSlice)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {
@@ -56,8 +67,20 @@ func (c *SDKCollectionsController) GetCollectionsByCollectionId(ctx *gin.Context
 	// プロジェクトIDを取得
 	projectID := ctx.GetInt("projectID")
 
-	// コレクションを取得
-	collection, err := c.collectionUsecase.GetCollectionsByCollectionId(collectionIdInt, projectID)
+	// 許可されたコレクションIDを取得
+	collectionIds, exists := ctx.Get("collectionIds")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Collection IDs not found in context"})
+		return
+	}
+	collectionIdsSlice, ok := collectionIds.([]int)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid collection IDs format"})
+		return
+	}
+
+	// コレクションを取得（アクセス制限付き）
+	collection, err := c.collectionUsecase.GetCollectionsByCollectionIdForSDK(collectionIdInt, projectID, collectionIdsSlice)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {

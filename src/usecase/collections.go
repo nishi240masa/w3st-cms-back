@@ -10,6 +10,8 @@ type CollectionsUsecase interface {
 	Make(newCollection *models.ApiCollection) error
 	GetCollectionByProjectId(projectId int) ([]models.ApiCollection, error)
 	GetCollectionsByCollectionId(collectionId int, projectId int) (*models.ApiCollection, error)
+	GetCollectionByProjectIdForSDK(projectId int, collectionIds []int) ([]models.ApiCollection, error)
+	GetCollectionsByCollectionIdForSDK(collectionId int, projectId int, collectionIds []int) (*models.ApiCollection, error)
 }
 
 type collectionsUsecase struct {
@@ -44,6 +46,47 @@ func (c *collectionsUsecase) GetCollectionsByCollectionId(collectionId int, proj
 	collection, err := c.collectionsRepo.GetCollectionsByCollectionId(collectionId, projectId)
 	if err != nil {
 		return nil, myerrors.WrapDomainError("collectionsUsecase.GetCollectionsByCollectionId", err)
+	}
+	return collection, nil
+}
+
+func (c *collectionsUsecase) GetCollectionByProjectIdForSDK(projectId int, collectionIds []int) ([]models.ApiCollection, error) {
+	// Get all collections for the project
+	allCollections, err := c.collectionsRepo.GetCollectionByProjectId(projectId)
+	if err != nil {
+		return nil, myerrors.WrapDomainError("collectionsUsecase.GetCollectionByProjectIdForSDK", err)
+	}
+
+	// Filter collections based on allowed collectionIds
+	var filteredCollections []models.ApiCollection
+	for _, collection := range allCollections {
+		for _, allowedId := range collectionIds {
+			if collection.ID == allowedId {
+				filteredCollections = append(filteredCollections, collection)
+				break
+			}
+		}
+	}
+
+	return filteredCollections, nil
+}
+
+func (c *collectionsUsecase) GetCollectionsByCollectionIdForSDK(collectionId int, projectId int, collectionIds []int) (*models.ApiCollection, error) {
+	// Check if collectionId is in allowed collectionIds
+	allowed := false
+	for _, id := range collectionIds {
+		if id == collectionId {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		return nil, myerrors.NewDomainErrorWithMessage(myerrors.QueryDataNotFoundError, "Collection not accessible with this API key")
+	}
+
+	collection, err := c.collectionsRepo.GetCollectionsByCollectionId(collectionId, projectId)
+	if err != nil {
+		return nil, myerrors.WrapDomainError("collectionsUsecase.GetCollectionsByCollectionIdForSDK", err)
 	}
 	return collection, nil
 }

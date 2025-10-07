@@ -1,6 +1,9 @@
 package usecase
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"os"
 	"time"
 
@@ -8,8 +11,16 @@ import (
 	"github.com/google/uuid"
 
 	"w3st/domain/models"
+	"w3st/domain/repositories"
 	"w3st/errors"
 )
+
+type ApiKeyClaims struct {
+	UserID        uuid.UUID `json:"user_id"`
+	ProjectID     int       `json:"project_id"`
+	CollectionIds []int     `json:"collection_ids"`
+	jwt.RegisteredClaims
+}
 
 type JwtUsecase interface {
 	GenerateToken(userID uuid.UUID) (models.Token, error)
@@ -17,8 +28,8 @@ type JwtUsecase interface {
 }
 
 type ApiKeyUsecase interface {
-	ValidateApiKey(apiKey string) (uuid.UUID, int, error)
-	CreateApiKey(userID string, projectID int, name string) (string, error)
+	ValidateApiKey(apiKey string) (string, error)
+	CreateApiKey(userID string, projectID int, name string, collectionIds []int) (string, error)
 }
 
 type jwtAuthUsecase struct {
@@ -43,8 +54,8 @@ func (a *jwtAuthUsecase) GenerateToken(userID uuid.UUID) (models.Token, error) {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signedToken, err := token.SignedString([]byte(a.secretKey))
-	if err != nil {
+	signedToken, jwtErr := token.SignedString([]byte(a.secretKey))
+	if jwtErr != nil {
 		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "トークンの生成に失敗しました")
 	}
 
@@ -89,21 +100,70 @@ func (a *jwtAuthUsecase) ValidateToken(token string) (string, error) {
 }
 
 type apiKeyUsecase struct {
-	// TODO: add repository
+	repo repositories.ApiKeyRepository
 }
 
-func NewApiKeyUsecase() ApiKeyUsecase {
-	return &apiKeyUsecase{}
+func NewApiKeyUsecase(repo repositories.ApiKeyRepository) ApiKeyUsecase {
+	return &apiKeyUsecase{repo: repo}
 }
 
-func (a *apiKeyUsecase) ValidateApiKey(apiKey string) (uuid.UUID, int, error) {
-	// TODO: implement validation
-	// For now, return a dummy UUID and project ID
-	return uuid.New(), 1, nil
+func (a *apiKeyUsecase) ValidateApiKey(apiKey string) (string, error) {
+	apiKeyModel, err := a.repo.FindByKey(context.Background(), apiKey)
+	if err != nil {
+		return "", err
+	}
+
+	// Generate JWT token with claims
+	claims := ApiKeyClaims{
+		UserID:        apiKeyModel.UserID,
+		ProjectID:     apiKeyModel.ProjectID,
+		CollectionIds: apiKeyModel.CollectionIds,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(apiKeyModel.ExpireAt),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, jwtErr := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
+	if jwtErr != nil {
+		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "トークンの生成に失敗しました")
+	}
+
+	return signedToken, nil
 }
 
-func (a *apiKeyUsecase) CreateApiKey(userID string, projectID int, name string) (string, error) {
-	// TODO: implement creation
-	// For now, return a dummy API key
-	return "dummy-api-key-" + name, nil
+func (a *apiKeyUsecase) CreateApiKey(userID string, projectID int, name string, collectionIds []int) (string, error) {
+	// Generate a random API key
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "APIキーの生成に失敗しました")
+	}
+	apiKey := hex.EncodeToString(bytes)
+
+	// Parse userID to UUID
+	parsedUserID, err := uuid.Parse(userID)
+	if err != nil {
+		return "", errors.NewDomainErrorWithMessage(errors.ErrorUnknown, "ユーザーIDのパースに失敗しました")
+	}
+
+	// Create API key model
+	apiKeyModel := models.ApiKeys{
+		UserID:        parsedUserID,
+		ProjectID:     projectID,
+		Name:          name,
+		Key:           apiKey,
+		CollectionIds: collectionIds,
+		ExpireAt:      time.Now().Add(365 * 24 * time.Hour), // 1 year expiration
+		Revoked:       false,
+		RateLimit:     1000, // Default rate limit
+	}
+
+	// Save to database
+	err = a.repo.Create(context.Background(), &apiKeyModel)
+	if err != nil {
+		return "", err
+	}
+
+	return apiKey, nil
 }

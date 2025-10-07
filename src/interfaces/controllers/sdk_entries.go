@@ -35,8 +35,20 @@ func (c *SDKEntriesController) GetEntries(ctx *gin.Context) {
 	// プロジェクトIDを取得
 	projectID := ctx.GetInt("projectID")
 
+	// collectionIdsを取得
+	collectionIdsInterface, exists := ctx.Get("collectionIds")
+	if !exists {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+	collectionIds, ok := collectionIdsInterface.([]int)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
 	// entriesを取得
-	entries, err := c.entriesUsecase.GetEntriesByCollectionId(collectionIdInt, projectID)
+	entries, err := c.entriesUsecase.GetEntriesByCollectionIdForSDK(collectionIdInt, projectID, collectionIds)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {

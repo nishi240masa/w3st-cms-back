@@ -3,14 +3,24 @@ package middlewares
 import (
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 
+	"github.com/golang-jwt/jwt/v5"
 	myerrors "w3st/errors"
 	"w3st/interfaces/controllers"
 	"w3st/usecase"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+type ApiKeyClaims struct {
+	UserID        uuid.UUID `json:"user_id"`
+	ProjectID     int       `json:"project_id"`
+	CollectionIds []int     `json:"collection_ids"`
+	jwt.RegisteredClaims
+}
 
 func JwtAuthMiddleware(authUsecase usecase.JwtUsecase) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -57,7 +67,7 @@ func ApiKeyAuthMiddleware(apiKeyUsecase usecase.ApiKeyUsecase) gin.HandlerFunc {
 		}
 
 		// API keyの検証
-		userID, projectID, err := apiKeyUsecase.ValidateApiKey(apiKey)
+		token, err := apiKeyUsecase.ValidateApiKey(apiKey)
 		if err != nil {
 			domainErr := &myerrors.DomainError{}
 			if errors.As(err, &domainErr) {
@@ -67,9 +77,25 @@ func ApiKeyAuthMiddleware(apiKeyUsecase usecase.ApiKeyUsecase) gin.HandlerFunc {
 				return
 			}
 		}
-		// API keyの検証に成功した場合、userIDとprojectIDをコンテキストに保存
-		c.Set("userID", userID.String())
-		c.Set("projectID", projectID)
+
+		// JWT tokenの検証
+		claims := &ApiKeyClaims{}
+		_, err = jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, errors.New("unexpected signing method")
+			}
+			return []byte(os.Getenv("SECRET_KEY")), nil
+		})
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.Abort()
+			return
+		}
+
+		// API keyの検証に成功した場合、userID、projectID、collectionIdsをコンテキストに保存
+		c.Set("userID", claims.UserID.String())
+		c.Set("projectID", claims.ProjectID)
+		c.Set("collectionIds", claims.CollectionIds)
 
 		// API keyが有効な場合、次のハンドラーに進む
 		c.Next()

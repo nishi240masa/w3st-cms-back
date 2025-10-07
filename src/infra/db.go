@@ -219,6 +219,14 @@ func SetupDB() *gorm.DB {
 			ALTER TABLE api_keys ADD COLUMN project_id INT NOT NULL DEFAULT 1;
 		END IF;
 	END $$;
+
+	-- Add collection_ids to api_keys if not exists
+	DO $$
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'api_keys' AND column_name = 'collection_ids') THEN
+			ALTER TABLE api_keys ADD COLUMN collection_ids INT[] NOT NULL DEFAULT '{}';
+		END IF;
+	END $$;
 	`
 	if err := db.Exec(alterSQL).Error; err != nil {
 		log.Fatalf("Error executing alter SQL: %v", err)
@@ -243,11 +251,17 @@ func SetupDB() *gorm.DB {
 	END;
 	$$ LANGUAGE plpgsql;
 
-	-- トリガーの設定
-	CREATE TRIGGER delete_related_data
-	AFTER DELETE ON api_collections
-	FOR EACH ROW
-	EXECUTE FUNCTION cascade_delete_apiSchema();
+	-- トリガーの設定（存在チェックして作成：初期化時にデータ削除が走らないようにする）
+	DO $$
+	BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'delete_related_data') THEN
+		CREATE TRIGGER delete_related_data
+		AFTER DELETE ON api_collections
+		FOR EACH ROW
+		EXECUTE FUNCTION cascade_delete_apiSchema();
+	  END IF;
+	END
+	$$;
 
 
 	-- list_options テーブルに対するトリガー関数
@@ -265,10 +279,16 @@ func SetupDB() *gorm.DB {
 	$$ LANGUAGE plpgsql;
 
 	-- トリガー設定
-	CREATE TRIGGER validate_options
-	BEFORE INSERT ON list_options
-	FOR EACH ROW
-	EXECUTE FUNCTION validate_list_options();
+	DO $$
+	BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'validate_options') THEN
+	    CREATE TRIGGER validate_options
+	    BEFORE INSERT ON list_options
+	    FOR EACH ROW
+	    EXECUTE FUNCTION validate_list_options();
+	  END IF;
+	END
+	$$;
 
 
 	-- relationが循環していないかチェックするトリガー関数
@@ -299,10 +319,16 @@ func SetupDB() *gorm.DB {
 	$$ LANGUAGE plpgsql;
 
 	-- トリガー設定
-	CREATE TRIGGER prevent_cyclic_relation
-	BEFORE INSERT ON api_kind_relation
-	FOR EACH ROW
-	EXECUTE FUNCTION check_cyclic_relation();
+	DO $$
+	BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'prevent_cyclic_relation') THEN
+	    CREATE TRIGGER prevent_cyclic_relation
+	    BEFORE INSERT ON api_kind_relation
+	    FOR EACH ROW
+	    EXECUTE FUNCTION check_cyclic_relation();
+	  END IF;
+	END
+	$$;
 
 
 
@@ -316,53 +342,107 @@ func SetupDB() *gorm.DB {
 	$$ LANGUAGE plpgsql;
 
 	-- 各テーブルにトリガーを設定
-	CREATE TRIGGER set_timestamp_users
-	BEFORE UPDATE ON users
-	FOR EACH ROW
-	EXECUTE FUNCTION update_timestamp();
+	DO $$
+	BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_users') THEN
+	    CREATE TRIGGER set_timestamp_users
+	    BEFORE UPDATE ON users
+	    FOR EACH ROW
+	    EXECUTE FUNCTION update_timestamp();
+	  END IF;
+	END
+	$$;
 
-	CREATE TRIGGER set_timestamp_api_collections
-	BEFORE UPDATE ON api_collections
-	FOR EACH ROW
-	EXECUTE FUNCTION update_timestamp();
+	DO $$
+	BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_api_collections') THEN
+	    CREATE TRIGGER set_timestamp_api_collections
+	    BEFORE UPDATE ON api_collections
+	    FOR EACH ROW
+	    EXECUTE FUNCTION update_timestamp();
+	  END IF;
+	END
+	$$;
 
-	CREATE TRIGGER set_timestamp_content_entries
-	BEFORE UPDATE ON content_entries
-	FOR EACH ROW
-	EXECUTE FUNCTION update_timestamp();
+	DO $$
+	BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_content_entries') THEN
+	    CREATE TRIGGER set_timestamp_content_entries
+	    BEFORE UPDATE ON content_entries
+	    FOR EACH ROW
+	    EXECUTE FUNCTION update_timestamp();
+	  END IF;
+	END
+	$$;
 
-	CREATE TRIGGER set_timestamp_api_fields
-	BEFORE UPDATE ON api_fields
-	FOR EACH ROW
-	EXECUTE FUNCTION update_timestamp();
+	DO $$
+	BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_api_fields') THEN
+	    CREATE TRIGGER set_timestamp_api_fields
+	    BEFORE UPDATE ON api_fields
+	    FOR EACH ROW
+	    EXECUTE FUNCTION update_timestamp();
+	  END IF;
+	END
+	$$;
 
-	CREATE TRIGGER set_timestamp_list_options
-	BEFORE UPDATE ON list_options
-	FOR EACH ROW
-	EXECUTE FUNCTION update_timestamp();
+	DO $$
+	BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_list_options') THEN
+	    CREATE TRIGGER set_timestamp_list_options
+	    BEFORE UPDATE ON list_options
+	    FOR EACH ROW
+	    EXECUTE FUNCTION update_timestamp();
+	  END IF;
+	END
+	$$;
 
-	CREATE TRIGGER set_timestamp_api_kind_relation
-	BEFORE UPDATE ON api_kind_relation
-	FOR EACH ROW
-	EXECUTE FUNCTION update_timestamp();
+	DO $$
+	BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_api_kind_relation') THEN
+	    CREATE TRIGGER set_timestamp_api_kind_relation
+	    BEFORE UPDATE ON api_kind_relation
+	    FOR EACH ROW
+	    EXECUTE FUNCTION update_timestamp();
+	  END IF;
+	END
+	$$;
 
 	-- media_assets テーブル
-	CREATE TRIGGER set_timestamp_media_assets
-	BEFORE UPDATE ON media_assets
-	FOR EACH ROW
-	EXECUTE FUNCTION update_timestamp();
+	DO $$
+	BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_media_assets') THEN
+	    CREATE TRIGGER set_timestamp_media_assets
+	    BEFORE UPDATE ON media_assets
+	    FOR EACH ROW
+	    EXECUTE FUNCTION update_timestamp();
+	  END IF;
+	END
+	$$;
 
 	-- content_versions テーブル
-	CREATE TRIGGER set_timestamp_content_versions
-	BEFORE UPDATE ON content_versions
-	FOR EACH ROW
-	EXECUTE FUNCTION update_timestamp();
+	DO $$
+	BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_content_versions') THEN
+	    CREATE TRIGGER set_timestamp_content_versions
+	    BEFORE UPDATE ON content_versions
+	    FOR EACH ROW
+	    EXECUTE FUNCTION update_timestamp();
+	  END IF;
+	END
+	$$;
 
 	-- user_permissions テーブル
-	CREATE TRIGGER set_timestamp_user_permissions
-	BEFORE UPDATE ON user_permissions
-	FOR EACH ROW
-	EXECUTE FUNCTION update_timestamp();
+	DO $$
+	BEGIN
+	  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp_user_permissions') THEN
+	    CREATE TRIGGER set_timestamp_user_permissions
+	    BEFORE UPDATE ON user_permissions
+	    FOR EACH ROW
+	    EXECUTE FUNCTION update_timestamp();
+	  END IF;
+	END
+	$$;
 
 	-- インデックス追加
 	CREATE INDEX IF NOT EXISTS idx_content_versions_created_by ON content_versions(created_by);
