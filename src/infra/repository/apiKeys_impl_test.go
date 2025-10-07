@@ -15,6 +15,8 @@ import (
 )
 
 func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
+	t.Helper()
+
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
@@ -37,6 +39,8 @@ func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
 }
 
 func TestFindByKey_NotFound(t *testing.T) {
+	t.Parallel()
+
 	gdb, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 
@@ -64,6 +68,8 @@ func TestFindByKey_NotFound(t *testing.T) {
 }
 
 func TestFindByKey_Success(t *testing.T) {
+	t.Parallel()
+
 	gdb, mock, cleanup := setupMockDB(t)
 	defer cleanup()
 

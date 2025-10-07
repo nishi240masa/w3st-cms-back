@@ -3,7 +3,6 @@ package controllers
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -54,33 +53,13 @@ func (c *SDKCollectionsController) GetCollectionByProjectId(ctx *gin.Context) {
 
 // GetCollectionsByCollectionId - SDK用：コレクション詳細取得
 func (c *SDKCollectionsController) GetCollectionsByCollectionId(ctx *gin.Context) {
-	// コレクションIDを取得
-	collectionId := ctx.Param("collectionId")
-
-	//　int型に変換
-	collectionIdInt, err := strconv.Atoi(collectionId)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Collection ID"})
+	collectionIdInt, projectID, collectionIds, status, errMsg := parseCollectionRequest(ctx)
+	if status != 0 {
+		ctx.JSON(status, gin.H{"error": errMsg})
 		return
 	}
 
-	// プロジェクトIDを取得
-	projectID := ctx.GetInt("projectID")
-
-	// 許可されたコレクションIDを取得
-	collectionIds, exists := ctx.Get("collectionIds")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Collection IDs not found in context"})
-		return
-	}
-	collectionIdsSlice, ok := collectionIds.([]int)
-	if !ok {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid collection IDs format"})
-		return
-	}
-
-	// コレクションを取得（アクセス制限付き）
-	collection, err := c.collectionUsecase.GetCollectionsByCollectionIdForSDK(collectionIdInt, projectID, collectionIdsSlice)
+	collection, err := c.collectionUsecase.GetCollectionsByCollectionIdForSDK(collectionIdInt, projectID, collectionIds)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {

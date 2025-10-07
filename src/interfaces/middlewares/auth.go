@@ -6,10 +6,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
 	myerrors "w3st/errors"
 	"w3st/interfaces/controllers"
 	"w3st/usecase"
+
+	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

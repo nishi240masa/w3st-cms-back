@@ -160,9 +160,9 @@ func (a *apiKeyUsecase) CreateApiKey(userID string, projectID int, name string, 
 	}
 
 	// Save to database
-	err = a.repo.Create(context.Background(), &apiKeyModel)
-	if err != nil {
-		return "", err
+	de := a.repo.Create(context.Background(), &apiKeyModel)
+	if de != nil {
+		return "", de
 	}
 
 	return apiKey, nil
