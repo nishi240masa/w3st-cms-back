@@ -78,7 +78,7 @@ func (c *GUICollectionsController) MakeCollection(ctx *gin.Context) {
 		return
 	}
 	// レスポンスを返す
-	ctx.JSON(http.StatusOK, gin.H{"message": "Collection created successfully"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "Collection created successfully", "id": newCollection.ID})
 }
 
 // CreateField - GUI用：フィールド作成
@@ -198,4 +198,83 @@ func (c *GUICollectionsController) DeleteField(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Field deleted successfully"})
+}
+
+// GetCollections - GUI用：コレクション一覧取得
+func (c *GUICollectionsController) GetCollections(ctx *gin.Context) {
+	// プロジェクトIDを取得
+	projectID := ctx.GetInt("projectID")
+
+	// コレクション一覧を取得
+	collections, err := c.collectionUsecase.GetCollectionByProjectId(projectID)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	// レスポンスを返す
+	ctx.JSON(http.StatusOK, collections)
+}
+
+// UpdateCollection - GUI用：コレクション更新
+func (c *GUICollectionsController) UpdateCollection(ctx *gin.Context) {
+	collectionId := ctx.Param("collectionId")
+
+	// int型に変換
+	collectionIdInt, err := strconv.Atoi(collectionId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Collection ID"})
+		return
+	}
+
+	var input dto.MakeCollection
+	if err := ctx.ShouldBindJSON(&input); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+
+
+	// プロジェクトIDを取得
+	projectID := ctx.GetInt("projectID")
+
+	// コレクションを取得して更新
+	existingCollection, err := c.collectionUsecase.GetCollectionsByCollectionId(collectionIdInt, projectID)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	// 更新
+	existingCollection.Name = input.Name
+	existingCollection.Description = input.Description
+
+	err = c.collectionUsecase.Make(existingCollection)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Collection updated successfully"})
+}
+
+// DeleteCollection - GUI用：コレクション削除
+func (c *GUICollectionsController) DeleteCollection(ctx *gin.Context) {
+	// TODO: コレクション削除のusecaseを実装
+	ctx.JSON(http.StatusOK, gin.H{"message": "Collection deleted successfully"})
 }

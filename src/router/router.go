@@ -99,8 +99,14 @@ func Init() {
 	sdkEntries.GET("", sdkEntriesController.GetEntries)
 
 	// GUI専用ルート
+	// Collection一覧取得
+	api.GET("/collections", guiCollectionController.GetCollections)
 	// Collection作成
 	api.POST("/collections", guiCollectionController.MakeCollection)
+	// Collection更新
+	api.PUT("/collections/:collectionId", guiCollectionController.UpdateCollection)
+	// Collection削除
+	api.DELETE("/collections/:collectionId", guiCollectionController.DeleteCollection)
 	// Fields
 	apiFields := api.Group("/collections/:collectionId/fields")
 	apiFields.POST("", guiCollectionController.CreateField)
