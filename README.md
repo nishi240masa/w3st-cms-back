@@ -1,29 +1,16 @@
-
 # w3st CMS API仕様書（β版）
-
 
 ## 目次
 
-
-
 - [概要](#概要)
-
 - [対象ユーザー](#対象ユーザー)
-
 - [テーブル設計](#テーブル設計)
-
 - [主要機能](#主要機能)
-
 - [APIの使い方](#apiの使い方)
-
 - [API設計](#api設計)
-
 - [差別化ポイント](#差別化ポイントmicrocmsなどと比較)
 
-
 ---
-
-
 
 ## 概要
 
@@ -31,154 +18,129 @@
 
 GUIベースでAPIを生成でき、通常のCMSよりもAPIベース開発に最適化されています。
 
-
 ---
-
-
 
 ## 対象ユーザー
 
-
 - フロントエンドエンジニア
-
 - Jamstack開発者
-
 - Webアプリ開発者
 
-
-
 ---
-
-
 
 ## テーブル設計
 
+### projects
+
+プロジェクト管理
+
+| カラム名             | 型            | 説明         |
+|--------------------|--------------|------------|
+| id                 | SERIAL       | プロジェクトID |
+| name               | VARCHAR(100) | プロジェクト名 |
+| description        | TEXT         | 説明         |
+| rate_limit_per_hour| INT          | 1時間あたりのレート制限 |
+| created_at         | TIMESTAMP    | 作成日時     |
+| updated_at         | TIMESTAMP    | 更新日時     |
+
+---
 
 ### users
 
-| カラム名       | 型            | 説明                       | 
-|------------|--------------|--------------------------| 
-| id         | UUID         | ユーザーID                   | 
-| name       | VARCHAR(100) | 名前                       | 
-| email      | VARCHAR(255) | メールアドレス (一意)             | 
-| password   | VARCHAR(100) | ハッシュ化されたパスワード            | 
-| role       | VARCHAR(50)  | ユーザーロール (例: user, admin) | 
-| created_at | TIMESTAMP    | 作成日時                     | 
-| updated_at | TIMESTAMP    | 更新日時                     | 
-
-
+| カラム名       | 型            | 説明                       |
+|------------|--------------|--------------------------|
+| id         | UUID         | ユーザーID                   |
+| name       | VARCHAR(100) | 名前                       |
+| email      | VARCHAR(255) | メールアドレス (一意)             |
+| password   | VARCHAR(100) | ハッシュ化されたパスワード            |
+| role       | VARCHAR(50)  | ユーザーロール (例: user, admin) |
+| created_at | TIMESTAMP    | 作成日時                     |
+| updated_at | TIMESTAMP    | 更新日時                     |
 
 ---
-
-
 
 ### api_collections
 
-
 コレクション（スキーマ）を管理
 
-| カラム名        | 型            | 説明        | 
-|-------------|--------------|-----------| 
-| id          | SERIAL       | コレクションID  | 
-| user_id     | UUID         | 所有者ユーザーID | 
-| name        | VARCHAR(100) | コレクション名   | 
-| description | TEXT         | 説明        | 
-| created_at  | TIMESTAMP    | 作成日時      | 
-| updated_at  | TIMESTAMP    | 更新日時      | 
-
-
+| カラム名        | 型            | 説明        |
+|-------------|--------------|-----------|
+| id          | SERIAL       | コレクションID  |
+| user_id     | UUID         | 所有者ユーザーID |
+| name        | VARCHAR(100) | コレクション名   |
+| description | TEXT         | 説明        |
+| created_at  | TIMESTAMP    | 作成日時      |
+| updated_at  | TIMESTAMP    | 更新日時      |
 
 ---
-
-
 
 ### api_fields
 
-
 フィールド定義
 
-| カラム名          | 型            | 説明                                        | 
-|---------------|--------------|-------------------------------------------| 
-| id            | SERIAL       | フィールドID                                   | 
-| collection_id | INT          | 紐づくコレクションID                               | 
-| field_id      | VARCHAR(100) | 内部フィールドキー                                 | 
-| view_name     | VARCHAR(100) | 表示用ラベル                                    | 
-| field_type    | VARCHAR(50)  | 型 (text, number, boolean, relation, etc.) | 
-| is_required   | BOOLEAN      | 必須フラグ                                     | 
-| default_value | JSONB        | デフォルト値                                    | 
-| created_at    | TIMESTAMP    | 作成日時                                      | 
-| updated_at    | TIMESTAMP    | 更新日時                                      | 
-
-
+| カラム名          | 型            | 説明                                        |
+|---------------|--------------|-------------------------------------------|
+| id            | SERIAL       | フィールドID                                   |
+| collection_id | INT          | 紐づくコレクションID                               |
+| field_id      | VARCHAR(100) | 内部フィールドキー                                 |
+| view_name     | VARCHAR(100) | 表示用ラベル                                    |
+| field_type    | VARCHAR(50)  | 型 (text, number, boolean, relation, etc.) |
+| is_required   | BOOLEAN      | 必須フラグ                                     |
+| default_value | JSONB        | デフォルト値                                    |
+| created_at    | TIMESTAMP    | 作成日時                                      |
+| updated_at    | TIMESTAMP    | 更新日時                                      |
 
 ---
-
-
 
 ### content_entries
 
-
 コンテンツデータ本体
 
-| カラム名          | 型         | 説明       | 
-|---------------|-----------|----------| 
-| id            | SERIAL    | エントリID   | 
-| collection_id | INT       | コレクションID | 
-| data          | JSONB     | データ本体    | 
-| created_at    | TIMESTAMP | 作成日時     | 
-| updated_at    | TIMESTAMP | 更新日時     | 
-
-
+| カラム名          | 型         | 説明       |
+|---------------|-----------|----------|
+| id            | SERIAL    | エントリID   |
+| collection_id | INT       | コレクションID |
+| data          | JSONB     | データ本体    |
+| created_at    | TIMESTAMP | 作成日時     |
+| updated_at    | TIMESTAMP | 更新日時     |
 
 ---
-
-
 
 ### list_options
 
-
 選択肢フィールド専用
 
-| カラム名       | 型            | 説明         | 
-|------------|--------------|------------| 
-| id         | SERIAL       | 選択肢ID      | 
-| field_id   | INT          | 紐づくフィールドID | 
-| value      | VARCHAR(255) | 選択肢の値      | 
-| created_at | TIMESTAMP    | 作成日時       | 
-| updated_at | TIMESTAMP    | 更新日時       | 
-
-
+| カラム名       | 型            | 説明         |
+|------------|--------------|------------|
+| id         | SERIAL       | 選択肢ID      |
+| field_id   | INT          | 紐づくフィールドID |
+| value      | VARCHAR(255) | 選択肢の値      |
+| created_at | TIMESTAMP    | 作成日時       |
+| updated_at | TIMESTAMP    | 更新日時       |
 
 ---
-
-
 
 ### api_kind_relation
 
-
 コレクション間リレーション管理
 
-| カラム名                  | 型           | 説明                                  | 
-|-----------------------|-------------|-------------------------------------| 
-| id                    | SERIAL      | リレーションID                            | 
-| collection_id         | INT         | 元コレクションID                           | 
-| related_collection_id | INT         | 関連コレクションID                          | 
-| relation_type         | VARCHAR(50) | リレーション型 (one-to-many, many-to-many) | 
-| created_at            | TIMESTAMP   | 作成日時                                | 
-| updated_at            | TIMESTAMP   | 更新日時                                | 
-
-
+| カラム名                  | 型           | 説明                                  |
+|-----------------------|-------------|-------------------------------------|
+| id                    | SERIAL      | リレーションID                            |
+| collection_id         | INT         | 元コレクションID                           |
+| related_collection_id | INT         | 関連コレクションID                          |
+| relation_type         | VARCHAR(50) | リレーション型 (one-to-many, many-to-many) |
+| created_at            | TIMESTAMP   | 作成日時                                |
+| updated_at            | TIMESTAMP   | 更新日時                                |
 
 ---
 
-
-
-### api_keys 
+### api_keys
 
 APIキー管理（個別にキーを発行してアクセスコントロールする）
 
 | カラム名                | 型            | 説明                     |
-|---------------------|--------------|------------------------| 
+|---------------------|--------------|------------------------|
 | id                  | SERIAL       | APIキーID                |
 | user_id             | UUID         | キーの所有者ユーザーID           |
 | name                | VARCHAR(100) | キーの名前（管理用）             |
@@ -198,8 +160,6 @@ APIキー単位でアクセス許可されるコレクションを紐付ける�
 | api_key_id  | INT   | APIキーID    |
 | collection_id | INT   | コレクションID |
 
-
-
 ---
 
 ### audit_logs
@@ -214,8 +174,6 @@ APIキー単位でアクセス許可されるコレクションを紐付ける�
 | resource | VARCHAR(255) | リソース     |
 | created_at | TIMESTAMP    | 作成日時     |
 | details  | TEXT         | 詳細       |
-
-
 
 ---
 
@@ -234,8 +192,6 @@ APIキー単位でアクセス許可されるコレクションを紐付ける�
 | created_at | TIMESTAMP    | 作成日時   |
 | updated_at | TIMESTAMP    | 更新日時   |
 
-
-
 ---
 
 ### user_permissions
@@ -250,8 +206,6 @@ APIキー単位でアクセス許可されるコレクションを紐付ける�
 | resource  | VARCHAR(255) | リソース   |
 | created_at | TIMESTAMP    | 作成日時   |
 | updated_at | TIMESTAMP    | 更新日時   |
-
-
 
 ---
 
@@ -269,38 +223,43 @@ APIキー単位でアクセス許可されるコレクションを紐付ける�
 | created_at | TIMESTAMP | 作成日時     |
 | updated_at | TIMESTAMP | 更新日時     |
 
+---
 
+### system_alerts
+
+システムアラート管理
+
+| カラム名     | 型            | 説明         |
+|----------|--------------|------------|
+| id        | SERIAL       | アラートID   |
+| alert_type| VARCHAR(50)  | アラートタイプ |
+| severity  | VARCHAR(50)  | 深刻度       |
+| title     | VARCHAR(255) | タイトル     |
+| message   | TEXT         | メッセージ   |
+| project_id| INT          | プロジェクトID |
+| is_active | BOOLEAN      | アクティブか   |
+| is_read   | BOOLEAN      | 既読か       |
+| metadata  | JSONB        | メタデータ   |
+| created_at| TIMESTAMP    | 作成日時     |
+| updated_at| TIMESTAMP    | 更新日時     |
 
 ---
 
-
-
 ## 主要機能
 
-
+- プロジェクト管理
 - コレクション作成・編集・削除
-
 - フィールド定義・編集
-
 - コンテンツ（エントリ）CRUD
-
 - リレーション管理（循環検出あり）
-
 - APIキー管理（IP制限・レート制限）
-
 - オプション選択フィールドサポート
-
 - 自動タイムスタンプ更新
-
 - メディアアセット管理
-
 - ユーザー権限管理
-
 - コンテンツバージョン管理
-
 - 監査ログ記録
-
-
+- システムアラート管理
 
 ---
 
@@ -337,12 +296,28 @@ Content-Type: application/json
 
 レスポンスからJWTトークンを取得し、以後のリクエストのAuthorizationヘッダーに `Bearer <token>` を設定してください。
 
-### 2. コレクションの作成
+### 2. プロジェクトの作成
+
+プロジェクトを作成します。
+
+```bash
+POST /api/projects
+Authorization: Bearer <your-jwt-token>
+Content-Type: application/json
+
+{
+  "name": "My Project",
+  "description": "Description of the project",
+  "rate_limit_per_hour": 1000
+}
+```
+
+### 3. コレクションの作成
 
 コンテンツを管理するためのコレクション（スキーマ）を作成します。
 
 ```bash
-POST /collections
+POST /api/collections
 Authorization: Bearer <your-jwt-token>
 Content-Type: application/json
 
@@ -352,12 +327,12 @@ Content-Type: application/json
 }
 ```
 
-### 3. フィールドの追加
+### 4. フィールドの追加
 
 作成したコレクションにフィールドを定義します。
 
 ```bash
-POST /collections/{collectionId}/fields
+POST /api/collections/{collectionId}/fields
 Authorization: Bearer <your-jwt-token>
 Content-Type: application/json
 
@@ -369,13 +344,14 @@ Content-Type: application/json
 }
 ```
 
-### 4. エントリの作成と管理
+### 5. エントリの作成と管理
 
 コレクションにコンテンツエントリを追加します。
 
 #### エントリ作成
 ```bash
-POST /collections/{collectionId}/entries
+POST /api/collections/{collectionId}/entries
+Authorization: Bearer <your-jwt-token>
 Content-Type: application/json
 
 {
@@ -385,18 +361,18 @@ Content-Type: application/json
 }
 ```
 
-#### エントリ取得（公開API）
+#### エントリ取得（SDK API）
 ```bash
 GET /collections/{collectionId}/entries
 X-API-Key: <your-api-key>
 ```
 
-### 5. APIキーの発行
+### 6. APIキーの発行
 
 公開APIアクセス用のAPIキーを作成します。
 
 ```bash
-POST /apikeys
+POST /api/api-keys
 Authorization: Bearer <your-jwt-token>
 Content-Type: application/json
 
@@ -408,13 +384,13 @@ Content-Type: application/json
 }
 ```
 
-### 6. メディアアセットの管理
+### 7. メディアアセットの管理
 
 画像などのメディアファイルをアップロードします。
 
 #### アップロード
 ```bash
-POST /media
+POST /api/media
 Authorization: Bearer <your-jwt-token>
 Content-Type: application/json
 
@@ -428,17 +404,17 @@ Content-Type: application/json
 
 #### 一覧取得
 ```bash
-GET /media
+GET /api/media
 Authorization: Bearer <your-jwt-token>
 ```
 
-### 7. 権限管理
+### 8. 権限管理
 
 ユーザーの権限を管理します。
 
 #### 権限付与
 ```bash
-POST /permissions/grant
+POST /api/permissions/grant
 Authorization: Bearer <your-jwt-token>
 Content-Type: application/json
 
@@ -450,17 +426,17 @@ Content-Type: application/json
 
 #### 権限チェック
 ```bash
-GET /permissions/check?permission=read&resource=collection:1
+GET /api/permissions/check?permission=read&resource=collection:1
 Authorization: Bearer <your-jwt-token>
 ```
 
-### 8. コンテンツバージョン管理
+### 9. コンテンツバージョン管理
 
 エントリのバージョンを管理します。
 
 #### バージョン作成
 ```bash
-POST /versions
+POST /api/versions
 Authorization: Bearer <your-jwt-token>
 Content-Type: application/json
 
@@ -472,23 +448,23 @@ Content-Type: application/json
 
 #### バージョン一覧
 ```bash
-GET /versions/{contentID}
+GET /api/versions/{contentID}
 Authorization: Bearer <your-jwt-token>
 ```
 
 #### バージョン復元
 ```bash
-POST /versions/{contentID}/restore/{versionID}
+POST /api/versions/{contentID}/restore/{versionID}
 Authorization: Bearer <your-jwt-token>
 ```
 
-### 9. 監査ログの確認
+### 10. 監査ログの確認
 
 システムのアクティビティログを確認します。
 
 #### ログ記録
 ```bash
-POST /audit/log
+POST /api/audit
 Authorization: Bearer <your-jwt-token>
 Content-Type: application/json
 
@@ -501,7 +477,32 @@ Content-Type: application/json
 
 #### ログ取得
 ```bash
-GET /audit/logs/user
+GET /api/audit/user
+Authorization: Bearer <your-jwt-token>
+```
+
+### 11. システムアラートの管理
+
+システムアラートを管理します。
+
+#### アラート作成
+```bash
+POST /api/system-alerts
+Authorization: Bearer <your-jwt-token>
+Content-Type: application/json
+
+{
+  "alert_type": "info",
+  "severity": "low",
+  "title": "System Update",
+  "message": "System will be updated tonight",
+  "project_id": 1
+}
+```
+
+#### アクティブアラート取得
+```bash
+GET /api/system-alerts/active
 Authorization: Bearer <your-jwt-token>
 ```
 
@@ -509,60 +510,72 @@ Authorization: Bearer <your-jwt-token>
 
 ---
 
-
 ## API設計
 
 詳細なAPI仕様は `api-document.yaml` を参照してください。
 
 ---
 
-
-
-
 ## 差別化ポイント（microCMSなどと比較）
 
-
 - フィールド単位でリレーションが設定できる
-
 - スキーマ循環防止が組み込まれている
-
 - IP制限・レート制限付きAPIキー発行
-
 - コレクション単位でアクセス制御可能
-
 - 複雑なスキーマ構成（JSONBによる柔軟なデータ格納）
-
 - 高速なカスタマイズ性（GUI設計予定）
-
+- プロジェクトベースの管理
 - ローカル開発モード（オフラインサポート）を計画中
-
 - メディアアセット管理機能
-
 - 詳細な権限管理システム
-
 - コンテンツバージョン管理
-
 - 監査ログによるセキュリティ強化
+- システムアラート管理
 
+## 認証フロー
 
+```flowchart TD
+    A[リクエスト受信] --> B{認証方式?}
+    B -->|JWT| C[JwtAuthMiddleware]
+    B -->|APIキー| D[ApiKeyAuthMiddleware]
+    B -->|Auth0| E[Auth0AuthMiddleware]
+    
+    C --> F[ValidateToken]
+    F --> G{有効?}
+    G -->|Yes| H[コンテキストにuserIDセット]
+    G -->|No| I[401エラー]
+    
+    D --> J[ValidateApiKey]
+    J --> K{有効?}
+    K -->|Yes| L[JWTトークン生成]
+    K -->|No| I
+    L --> M[JWTパース検証]
+    M --> N{有効?}
+    N -->|Yes| O[コンテキストにuserID/projectID/collectionIdsセット]
+    N -->|No| I
+    
+    E --> P[Auth0トークン検証]
+    P --> Q{有効?}
+    Q -->|Yes| R[コンテキストにuserID/email/nameセット]
+    Q -->|No| I
+    
+    H --> S[レート制限チェック]
+    O --> S
+    R --> S
+    
+    S --> T{制限内?}
+    T -->|Yes| U[次のハンドラー]
+    T -->|No| V[429エラー]
+
+```
 
 ---
 
-
-
 # 🚀 今後追加予定（Future Work）
 
-
 - APIログ管理（リクエストログ）
-
 - Webhook通知
-
 - バージョニング管理
-
 - マルチユーザー共同編集機能
-
-- SSO (Google, GitHub認証)
-
-
 
 ---
