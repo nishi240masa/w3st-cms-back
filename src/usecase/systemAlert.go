@@ -3,9 +3,16 @@ package usecase
 import (
 	"context"
 	"time"
+
 	"w3st/domain/models"
 	"w3st/domain/repositories"
 	myerrors "w3st/errors"
+)
+
+const (
+	SeverityCritical = "critical"
+	SeverityError    = "error"
+	SeverityWarning  = "warning"
 )
 
 type SystemAlertUsecase interface {
@@ -102,15 +109,15 @@ func (u *systemAlertUsecase) CheckAndCreateStorageAlert(ctx context.Context, pro
 	var message string
 
 	if usagePercent >= 95 {
-		severity = "critical"
+		severity = SeverityCritical
 		title = "ストレージ容量がほぼ満杯です"
 		message = "ストレージ使用率が95%を超えています。すぐに容量を増やしてください。"
 	} else if usagePercent >= 85 {
-		severity = "error"
+		severity = SeverityError
 		title = "ストレージ容量が逼迫しています"
 		message = "ストレージ使用率が85%を超えています。容量拡張を検討してください。"
 	} else if usagePercent >= 75 {
-		severity = "warning"
+		severity = SeverityWarning
 		title = "ストレージ容量に注意が必要です"
 		message = "ストレージ使用率が75%を超えています。使用状況を確認してください。"
 	} else {
@@ -133,15 +140,15 @@ func (u *systemAlertUsecase) CheckAndCreateApiLimitAlert(ctx context.Context, pr
 	var message string
 
 	if usagePercent >= 95 {
-		severity = "critical"
+		severity = SeverityCritical
 		title = "APIリクエスト制限に達しています"
 		message = "APIリクエスト数が制限の95%を超えています。制限解除を検討してください。"
 	} else if usagePercent >= 85 {
-		severity = "error"
+		severity = SeverityError
 		title = "APIリクエスト制限が近づいています"
 		message = "APIリクエスト数が制限の85%を超えています。使用状況を確認してください。"
 	} else if usagePercent >= 75 {
-		severity = "warning"
+		severity = SeverityWarning
 		title = "APIリクエスト制限に注意が必要です"
 		message = "APIリクエスト数が制限の75%を超えています。制限拡大を検討してください。"
 	} else {
@@ -149,10 +156,10 @@ func (u *systemAlertUsecase) CheckAndCreateApiLimitAlert(ctx context.Context, pr
 	}
 
 	metadata := map[string]interface{}{
-		"request_count":  requestCount,
-		"limit":          limit,
-		"usage_percent":  usagePercent,
-		"threshold":      "api_limit",
+		"request_count": requestCount,
+		"limit":         limit,
+		"usage_percent": usagePercent,
+		"threshold":     "api_limit",
 	}
 
 	return u.CreateAlert(ctx, "api_limit", severity, title, message, projectID, metadata)

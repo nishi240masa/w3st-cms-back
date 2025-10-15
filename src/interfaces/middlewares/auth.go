@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"context"
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
@@ -37,11 +38,11 @@ type Auth0Claims struct {
 }
 
 type Auth0JWK struct {
-	Kty string `json:"kty"`
-	Use string `json:"use"`
-	N   string `json:"n"`
-	E   string `json:"e"`
-	Kid string `json:"kid"`
+	Kty string   `json:"kty"`
+	Use string   `json:"use"`
+	N   string   `json:"n"`
+	E   string   `json:"e"`
+	Kid string   `json:"kid"`
 	X5c []string `json:"x5c"`
 }
 
@@ -180,146 +181,154 @@ func ProjectRateLimitMiddleware(projectUsecase usecase.ProjectUsecase, systemAle
 		}
 
 		// アラートチェック（100リクエストごとに）
-			if count%100 == 0 {
-				err := systemAlertUsecase.CheckAndCreateApiLimitAlert(c.Request.Context(), projectID, count, rateLimit)
-				if err != nil {
-					// アラート作成失敗はログ出力のみ（リクエストは継続）
-				}
-			}
-	
-			c.Next()
-		}
-	}
-	
-	// Auth0AuthMiddleware Auth0トークン検証ミドルウェア
-	func Auth0AuthMiddleware() gin.HandlerFunc {
-		return func(c *gin.Context) {
-			// tokenをヘッダーから取得
-			authHeader := c.Request.Header.Get("Authorization")
-			token := strings.TrimPrefix(authHeader, "Bearer ")
-	
-			// tokenの存在を確認
-			if token == "" {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
-				c.Abort()
-				return
-			}
-	
-			// Auth0トークンの検証
-			claims, err := validateAuth0Token(token)
+		if count%100 == 0 {
+			err := systemAlertUsecase.CheckAndCreateApiLimitAlert(c.Request.Context(), projectID, count, rateLimit)
 			if err != nil {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Auth0 token"})
-				c.Abort()
-				return
-			}
-	
-			// 検証成功の場合、ユーザー情報をコンテキストに保存
-			c.Set("userID", claims.Sub)
-			c.Set("userEmail", claims.Email)
-			c.Set("userName", claims.Name)
-	
-			c.Next()
-		}
-	}
-	
-	// validateAuth0Token Auth0トークンを検証
-	func validateAuth0Token(tokenString string) (*Auth0Claims, error) {
-		// Auth0ドメインを取得
-		auth0Domain := os.Getenv("AUTH0_DOMAIN")
-		if auth0Domain == "" {
-			return nil, errors.New("AUTH0_DOMAIN environment variable is not set")
-		}
-	
-		// JWK Setを取得
-		jwkSet, err := getAuth0JWKSet(auth0Domain)
-		if err != nil {
-			return nil, err
-		}
-	
-		// トークンをパース（署名検証なし）
-		token, err := jwt.ParseWithClaims(tokenString, &Auth0Claims{}, nil)
-		if err != nil {
-			return nil, err
-		}
-	
-		if _, ok := token.Claims.(*Auth0Claims); !ok {
-			return nil, errors.New("invalid token claims")
-		}
-	
-		// kidから適切な公開鍵を取得
-		kid := token.Header["kid"].(string)
-		var publicKey *rsa.PublicKey
-		for _, jwk := range jwkSet.Keys {
-			if jwk.Kid == kid {
-				publicKey, err = jwkToPublicKey(jwk)
-				if err != nil {
-					return nil, err
-				}
-				break
+				// アラート作成失敗はログ出力のみ（リクエストは継続）
+				fmt.Printf("Failed to create API limit alert: %v\n", err)
 			}
 		}
-	
-		if publicKey == nil {
-			return nil, errors.New("unable to find appropriate key")
+
+		c.Next()
+	}
+}
+
+// Auth0AuthMiddleware Auth0トークン検証ミドルウェア
+func Auth0AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// tokenをヘッダーから取得
+		authHeader := c.Request.Header.Get("Authorization")
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+
+		// tokenの存在を確認
+		if token == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
+			c.Abort()
+			return
 		}
-	
-		// 署名検証付きで再度パース
-		token, err = jwt.ParseWithClaims(tokenString, &Auth0Claims{}, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+
+		// Auth0トークンの検証
+		claims, err := validateAuth0Token(token)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Auth0 token"})
+			c.Abort()
+			return
+		}
+
+		// 検証成功の場合、ユーザー情報をコンテキストに保存
+		c.Set("userID", claims.Sub)
+		c.Set("userEmail", claims.Email)
+		c.Set("userName", claims.Name)
+
+		c.Next()
+	}
+}
+
+// validateAuth0Token Auth0トークンを検証
+func validateAuth0Token(tokenString string) (*Auth0Claims, error) {
+	// Auth0ドメインを取得
+	auth0Domain := os.Getenv("AUTH0_DOMAIN")
+	if auth0Domain == "" {
+		return nil, errors.New("AUTH0_DOMAIN environment variable is not set")
+	}
+
+	// JWK Setを取得
+	jwkSet, err := getAuth0JWKSet(auth0Domain)
+	if err != nil {
+		return nil, err
+	}
+
+	// トークンをパース（署名検証なし）
+	token, err := jwt.ParseWithClaims(tokenString, &Auth0Claims{}, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse token: %w", err)
+	}
+
+	if _, ok := token.Claims.(*Auth0Claims); !ok {
+		return nil, errors.New("invalid token claims")
+	}
+
+	// kidから適切な公開鍵を取得
+	kid, ok := token.Header["kid"].(string)
+	if !ok {
+		return nil, errors.New("kid not found or not string")
+	}
+	var publicKey *rsa.PublicKey
+	for _, jwk := range jwkSet.Keys {
+		if jwk.Kid == kid {
+			publicKey, err = jwkToPublicKey(jwk)
+			if err != nil {
+				return nil, err
 			}
-			return publicKey, nil
-		})
-	
-		if err != nil {
-			return nil, err
+			break
 		}
-	
-		if claims, ok := token.Claims.(*Auth0Claims); ok && token.Valid {
-			return claims, nil
-		}
-	
-		return nil, errors.New("invalid token")
 	}
-	
-	// getAuth0JWKSet Auth0からJWK Setを取得
-	func getAuth0JWKSet(domain string) (*Auth0JWKSet, error) {
-		resp, err := http.Get(fmt.Sprintf("https://%s/.well-known/jwks.json", domain))
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-	
-		var jwkSet Auth0JWKSet
-		if err := json.NewDecoder(resp.Body).Decode(&jwkSet); err != nil {
-			return nil, err
-		}
-	
-		return &jwkSet, nil
+
+	if publicKey == nil {
+		return nil, errors.New("unable to find appropriate key")
 	}
-	
-	// jwkToPublicKey JWKからRSA公開鍵を生成
-	func jwkToPublicKey(jwk Auth0JWK) (*rsa.PublicKey, error) {
-		if jwk.Kty != "RSA" {
-			return nil, errors.New("unsupported key type")
+
+	// 署名検証付きで再度パース
+	token, err = jwt.ParseWithClaims(tokenString, &Auth0Claims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-	
-		// Base64URLデコード
-		nBytes, err := base64.RawURLEncoding.DecodeString(jwk.N)
-		if err != nil {
-			return nil, err
-		}
-	
-		eBytes, err := base64.RawURLEncoding.DecodeString(jwk.E)
-		if err != nil {
-			return nil, err
-		}
-	
-		// RSA公開鍵を構築
-		publicKey := &rsa.PublicKey{
-			N: new(big.Int).SetBytes(nBytes),
-			E: int(new(big.Int).SetBytes(eBytes).Int64()),
-		}
-	
 		return publicKey, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse token with claims: %w", err)
 	}
+
+	if claims, ok := token.Claims.(*Auth0Claims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, errors.New("invalid token")
+}
+
+// getAuth0JWKSet Auth0からJWK Setを取得
+func getAuth0JWKSet(domain string) (*Auth0JWKSet, error) {
+	url := fmt.Sprintf("https://%s/.well-known/jwks.json", domain)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get JWK set: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var jwkSet Auth0JWKSet
+	if err := json.NewDecoder(resp.Body).Decode(&jwkSet); err != nil {
+		return nil, fmt.Errorf("failed to decode JWK set: %w", err)
+	}
+
+	return &jwkSet, nil
+}
+
+// jwkToPublicKey JWKからRSA公開鍵を生成
+func jwkToPublicKey(jwk Auth0JWK) (*rsa.PublicKey, error) {
+	if jwk.Kty != "RSA" {
+		return nil, errors.New("unsupported key type")
+	}
+
+	// Base64URLデコード
+	nBytes, err := base64.RawURLEncoding.DecodeString(jwk.N)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode N: %w", err)
+	}
+
+	eBytes, err := base64.RawURLEncoding.DecodeString(jwk.E)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode E: %w", err)
+	}
+
+	// RSA公開鍵を構築
+	publicKey := &rsa.PublicKey{
+		N: new(big.Int).SetBytes(nBytes),
+		E: int(new(big.Int).SetBytes(eBytes).Int64()),
+	}
+
+	return publicKey, nil
+}

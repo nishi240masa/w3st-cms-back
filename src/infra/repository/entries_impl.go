@@ -1,6 +1,8 @@
 package infrastructure
 
 import (
+	"errors"
+
 	"w3st/domain/models"
 	myerrors "w3st/errors"
 
@@ -43,7 +45,7 @@ func (r *EntriesRepository) GetEntryByIdAndProjectId(entryId int, projectId int)
 	result := r.db.Where("id = ? AND project_id = ?", entryId, projectId).First(&entry)
 
 	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, result.Error)
 		}
 		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error)

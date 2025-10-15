@@ -2,6 +2,8 @@ package infrastructure
 
 import (
 	"context"
+	"errors"
+
 	"w3st/domain/models"
 	myerrors "w3st/errors"
 
@@ -23,7 +25,7 @@ func (r *ProjectRepository) FindByID(ctx context.Context, id int) (*models.Proje
 	result := r.db.WithContext(ctx).First(&project, id)
 
 	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, myerrors.NewDomainError(myerrors.QueryDataNotFoundError, result.Error)
 		}
 		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error)

@@ -267,8 +267,6 @@ func (c *GUICollectionsController) UpdateCollection(ctx *gin.Context) {
 		return
 	}
 
-
-
 	// プロジェクトIDを取得
 	projectID := ctx.GetInt("projectID")
 

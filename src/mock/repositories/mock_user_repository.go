@@ -51,6 +51,20 @@ func (mr *MockUserRepositoryMockRecorder) Create(ctx, newUser interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUserRepository)(nil).Create), ctx, newUser)
 }
 
+// DeleteUser mocks base method.
+func (m *MockUserRepository) DeleteUser(ctx context.Context, userID string) *errors.DomainError {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUser", ctx, userID)
+	ret0, _ := ret[0].(*errors.DomainError)
+	return ret0
+}
+
+// DeleteUser indicates an expected call of DeleteUser.
+func (mr *MockUserRepositoryMockRecorder) DeleteUser(ctx, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockUserRepository)(nil).DeleteUser), ctx, userID)
+}
+
 // FindByEmail mocks base method.
 func (m *MockUserRepository) FindByEmail(ctx context.Context, email string) (*models.Users, *errors.DomainError) {
 	m.ctrl.T.Helper()
@@ -79,6 +93,21 @@ func (m *MockUserRepository) FindByID(ctx context.Context, userID string) (*mode
 func (mr *MockUserRepositoryMockRecorder) FindByID(ctx, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockUserRepository)(nil).FindByID), ctx, userID)
+}
+
+// GetAllUsers mocks base method.
+func (m *MockUserRepository) GetAllUsers(ctx context.Context) ([]models.Users, *errors.DomainError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllUsers", ctx)
+	ret0, _ := ret[0].([]models.Users)
+	ret1, _ := ret[1].(*errors.DomainError)
+	return ret0, ret1
+}
+
+// GetAllUsers indicates an expected call of GetAllUsers.
+func (mr *MockUserRepositoryMockRecorder) GetAllUsers(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllUsers", reflect.TypeOf((*MockUserRepository)(nil).GetAllUsers), ctx)
 }
 
 // Update mocks base method.

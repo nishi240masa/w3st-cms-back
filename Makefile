@@ -39,7 +39,10 @@ mock-audit:
 mock-tx:
 	$(MOCKGEN) -source=src/$(SRC_DIR)/$(REPO_PKG)/transaction.go -destination=src/$(MOCK_DIR)/$(REPO_PKG)/mock_transaction_repository.go -package=mock_repositories
 
-mock-all: mock-user mock-audit mock-tx
+mock-field:
+	$(MOCKGEN) -source=src/$(SRC_DIR)/$(REPO_PKG)/field.go -destination=src/$(MOCK_DIR)/$(REPO_PKG)/mock_field_repository.go -package=mock_repositories
+
+mock-all: mock-user mock-audit mock-field mock-tx
 
 # ---------- Format / Lint ----------
 GOFMT = gofmt

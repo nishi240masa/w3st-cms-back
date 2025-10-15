@@ -46,7 +46,7 @@ func (c *SystemAlertController) GetAlerts(ctx *gin.Context) {
 	}
 
 	// レスポンス変換
-	var response []dto.SystemAlertResponse
+	response := make([]dto.SystemAlertResponse, 0, len(alerts))
 	for _, alert := range alerts {
 		response = append(response, dto.SystemAlertResponse{
 			ID:        alert.ID,
@@ -83,7 +83,7 @@ func (c *SystemAlertController) GetActiveAlerts(ctx *gin.Context) {
 	}
 
 	// レスポンス変換
-	var response []dto.SystemAlertResponse
+	response := make([]dto.SystemAlertResponse, 0, len(alerts))
 	for _, alert := range alerts {
 		response = append(response, dto.SystemAlertResponse{
 			ID:        alert.ID,

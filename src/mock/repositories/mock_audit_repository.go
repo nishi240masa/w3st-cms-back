@@ -96,6 +96,36 @@ func (mr *MockAuditRepositoryMockRecorder) FindByID(ctx, id interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockAuditRepository)(nil).FindByID), ctx, id)
 }
 
+// FindByProjectID mocks base method.
+func (m *MockAuditRepository) FindByProjectID(ctx context.Context, projectID int) ([]*models.AuditLog, *errors.DomainError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindByProjectID", ctx, projectID)
+	ret0, _ := ret[0].([]*models.AuditLog)
+	ret1, _ := ret[1].(*errors.DomainError)
+	return ret0, ret1
+}
+
+// FindByProjectID indicates an expected call of FindByProjectID.
+func (mr *MockAuditRepositoryMockRecorder) FindByProjectID(ctx, projectID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByProjectID", reflect.TypeOf((*MockAuditRepository)(nil).FindByProjectID), ctx, projectID)
+}
+
+// FindByProjectIDWithLimit mocks base method.
+func (m *MockAuditRepository) FindByProjectIDWithLimit(ctx context.Context, projectID, limit, offset int) ([]*models.AuditLog, *errors.DomainError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindByProjectIDWithLimit", ctx, projectID, limit, offset)
+	ret0, _ := ret[0].([]*models.AuditLog)
+	ret1, _ := ret[1].(*errors.DomainError)
+	return ret0, ret1
+}
+
+// FindByProjectIDWithLimit indicates an expected call of FindByProjectIDWithLimit.
+func (mr *MockAuditRepositoryMockRecorder) FindByProjectIDWithLimit(ctx, projectID, limit, offset interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByProjectIDWithLimit", reflect.TypeOf((*MockAuditRepository)(nil).FindByProjectIDWithLimit), ctx, projectID, limit, offset)
+}
+
 // FindByUserID mocks base method.
 func (m *MockAuditRepository) FindByUserID(ctx context.Context, userID string) ([]*models.AuditLog, *errors.DomainError) {
 	m.ctrl.T.Helper()
