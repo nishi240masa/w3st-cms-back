@@ -80,3 +80,17 @@ func (mr *MockUserRepositoryMockRecorder) FindByID(ctx, userID interface{}) *gom
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockUserRepository)(nil).FindByID), ctx, userID)
 }
+
+// Update mocks base method.
+func (m *MockUserRepository) Update(ctx context.Context, user *models.Users) *errors.DomainError {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", ctx, user)
+	ret0, _ := ret[0].(*errors.DomainError)
+	return ret0
+}
+
+// Update indicates an expected call of Update.
+func (mr *MockUserRepositoryMockRecorder) Update(ctx, user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockUserRepository)(nil).Update), ctx, user)
+}

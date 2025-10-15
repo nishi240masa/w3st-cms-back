@@ -12,6 +12,7 @@ type FieldUsecase interface {
 	Create(projectId int, newField *models.FieldData) error
 	Update(projectId int, newField *models.FieldData) error
 	Delete(projectId int, fieldId string) error
+	GetByCollectionId(collectionId int, projectId int) ([]models.FieldData, error)
 }
 
 type fieldUsecase struct {
@@ -38,6 +39,19 @@ func (f *fieldUsecase) Create(projectId int, newField *models.FieldData) error {
 	}
 	// フィールドの作成に成功した場合
 	return nil
+}
+
+func (f *fieldUsecase) GetByCollectionId(collectionId int, projectId int) ([]models.FieldData, error) {
+	// collectionが存在するか確認
+	if _, err := f.collectionRepo.GetCollectionsByCollectionId(collectionId, projectId); err != nil {
+		return nil, myerrors.WrapDomainError("fieldUsecase.GetByCollectionId", err)
+	}
+
+	fields, err := f.fieldRepo.GetFieldsByCollectionId(collectionId, projectId)
+	if err != nil {
+		return nil, myerrors.WrapDomainError("fieldUsecase.GetByCollectionId", err)
+	}
+	return fields, nil
 }
 
 func (f *fieldUsecase) Update(projectId int, newField *models.FieldData) error {

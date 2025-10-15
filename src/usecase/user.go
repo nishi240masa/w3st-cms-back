@@ -13,6 +13,9 @@ type UserUsecase interface {
 	Create(newUser *models.Users, ctx context.Context) (*models.Users, error)
 	FindByEmail(email string) (*models.Users, error)
 	FindByID(userID string) (*models.Users, error)
+	Update(user *models.Users, ctx context.Context) error
+	GetAllUsers() ([]models.Users, error)
+	DeleteUser(userID string) error
 }
 
 type userUsecase struct {
@@ -58,4 +61,26 @@ func (u *userUsecase) FindByID(userID string) (*models.Users, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+func (u *userUsecase) Update(user *models.Users, ctx context.Context) error {
+	if err := u.userRepo.Update(ctx, user); err != nil {
+		return myerrors.WrapDomainError("usecase.Update", err)
+	}
+	return nil
+}
+
+func (u *userUsecase) GetAllUsers() ([]models.Users, error) {
+	users, err := u.userRepo.GetAllUsers(context.Background())
+	if err != nil {
+		return nil, myerrors.WrapDomainError("usecase.GetAllUsers", err)
+	}
+	return users, nil
+}
+
+func (u *userUsecase) DeleteUser(userID string) error {
+	if err := u.userRepo.DeleteUser(context.Background(), userID); err != nil {
+		return myerrors.WrapDomainError("usecase.DeleteUser", err)
+	}
+	return nil
 }

@@ -53,15 +53,18 @@ func Init() {
 	apiKeyUsecase := f.InitApiKeyUsecase()
 	apiKeyController := f.InitApiKeyController()
 
-	// Collections - SDK専用 (APIキー認証)
+	// Collections - SDK専用 (APIキー認証 + プロジェクトレート制限)
 	sdkCollections := r.Group("/collections")
 	sdkCollections.Use(middlewares.ApiKeyAuthMiddleware(apiKeyUsecase))
+	projectUsecase := f.InitProjectUsecase()
+	systemAlertUsecase := f.InitSystemAlertUsecase()
+	sdkCollections.Use(middlewares.ProjectRateLimitMiddleware(projectUsecase, systemAlertUsecase))
 	sdkCollectionController := f.InitSDKCollectionsController()
 	sdkEntriesController := f.InitSDKEntriesController()
 
-	// API - GUI専用 (JWT認証)
+	// API - GUI専用 (Auth0認証)
 	api := r.Group("/api")
-	api.Use(middlewares.JwtAuthMiddleware(authUsecase))
+	api.Use(middlewares.Auth0AuthMiddleware())
 	guiCollectionController := f.InitGUICollectionsController()
 	guiEntriesController := f.InitGUIEntriesController()
 
@@ -77,6 +80,12 @@ func Init() {
 	// Audit
 	auditController := f.InitAuditController()
 
+	// System Alerts
+	systemAlertController := f.InitSystemAlertController()
+
+	// Projects
+	projectController := f.InitProjectController()
+
 	// ユーザー登録
 	users.POST("/signup", userController.Signup)
 
@@ -85,6 +94,14 @@ func Init() {
 
 	// ユーザー情報取得
 	users.GET("/me", middlewares.JwtAuthMiddleware(authUsecase), userController.GetUserInfo)
+	// ユーザー情報更新
+	users.PUT("/me", middlewares.JwtAuthMiddleware(authUsecase), userController.UpdateUser)
+
+	// 管理者用ユーザー管理API
+	apiUsers := api.Group("/users")
+	apiUsers.GET("", userController.GetAllUsers)
+	apiUsers.PUT("/:userId", userController.UpdateUserById)
+	apiUsers.DELETE("/:userId", userController.DeleteUser)
 
 	// API Keys - GUI専用
 	api.POST("/api-keys", apiKeyController.CreateApiKey)
@@ -109,6 +126,7 @@ func Init() {
 	api.DELETE("/collections/:collectionId", guiCollectionController.DeleteCollection)
 	// Fields
 	apiFields := api.Group("/collections/:collectionId/fields")
+	apiFields.GET("", guiCollectionController.GetFields)
 	apiFields.POST("", guiCollectionController.CreateField)
 	apiFields.PUT("/:fieldId", guiCollectionController.UpdateField)
 	apiFields.DELETE("/:fieldId", guiCollectionController.DeleteField)
@@ -117,6 +135,8 @@ func Init() {
 	guiEntries := api.Group("/collections/:collectionId/entries")
 	guiEntries.GET("", guiEntriesController.GetEntries)
 	guiEntries.POST("", guiEntriesController.CreateEntry)
+	guiEntries.PUT("/:entryId", guiEntriesController.UpdateEntry)
+	guiEntries.DELETE("/:entryId", guiEntriesController.DeleteEntry)
 
 	// Media routes - GUI専用
 	api.POST("/media", mediaController.Upload)
@@ -140,7 +160,21 @@ func Init() {
 	api.POST("/audit", auditController.LogAction)
 	api.GET("/audit/user", auditController.GetLogsByUser)
 	api.GET("/audit/action/:action", auditController.GetLogsByAction)
+	api.GET("/audit/project/:projectId", auditController.GetLogsByProject)
 	api.GET("/audit/all", auditController.GetAllLogs)
+
+	// System Alert routes - GUI専用
+	api.GET("/system-alerts", systemAlertController.GetAlerts)
+	api.GET("/system-alerts/active", systemAlertController.GetActiveAlerts)
+	api.POST("/system-alerts", systemAlertController.CreateAlert)
+	api.PUT("/system-alerts/:id/read", systemAlertController.MarkAsRead)
+	api.DELETE("/system-alerts/:id", systemAlertController.DeleteAlert)
+	api.GET("/system-alerts/count", systemAlertController.GetAlertCount)
+
+	// Project routes - GUI専用
+	api.POST("/projects", projectController.CreateProject)
+	api.GET("/projects", projectController.GetAllProjects)
+	api.GET("/projects/:id", projectController.GetProjectByID)
 
 	// 指定されたポートでサーバーを開始
 	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {

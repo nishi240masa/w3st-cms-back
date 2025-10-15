@@ -9,6 +9,7 @@ type MediaAsset struct {
 	Path      string    `gorm:"type:text;not null" json:"path"`
 	Size      int64     `gorm:"not null" json:"size"`
 	UserID    UUID      `gorm:"type:uuid;not null" json:"user_id"`
+	ProjectID int       `gorm:"not null" json:"project_id"`
 	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }

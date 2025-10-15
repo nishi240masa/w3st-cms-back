@@ -29,6 +29,15 @@ func (r *FieldRepository) CreateField(newField *models.FieldData) error {
 	return nil
 }
 
+func (r *FieldRepository) GetFieldsByCollectionId(collectionId int, projectId int) ([]models.FieldData, error) {
+	var fields []models.FieldData
+	result := r.db.Where("collection_id = ? AND project_id = ?", collectionId, projectId).Find(&fields)
+	if result.Error != nil {
+		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error)
+	}
+	return fields, nil
+}
+
 func (r *FieldRepository) UpdateField(newField *models.FieldData) error {
 	result := r.db.Save(newField)
 	if result.Error != nil {

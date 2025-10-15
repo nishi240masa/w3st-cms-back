@@ -1,3 +1,16 @@
+-- projects テーブル
+CREATE TABLE IF NOT EXISTS projects (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    rate_limit_per_hour INT DEFAULT 1000, -- 1時間あたりの最大リクエスト数
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- デフォルトプロジェクトの挿入
+INSERT INTO projects (id, name, description, rate_limit_per_hour) VALUES (1, 'Default Project', 'Default project', 1000) ON CONFLICT (id) DO NOTHING;
+
 -- users テーブル
 CREATE TABLE IF NOT EXISTS users (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -329,3 +342,64 @@ CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user
 -- audit_logs 検索用インデックス
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
+
+-- system_alerts テーブル
+CREATE TABLE IF NOT EXISTS system_alerts (
+    id SERIAL PRIMARY KEY,
+    alert_type VARCHAR(50) NOT NULL,
+    severity VARCHAR(20) NOT NULL CHECK (severity IN ('info', 'warning', 'error', 'critical')),
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    project_id INT NOT NULL DEFAULT 1,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    is_read BOOLEAN NOT NULL DEFAULT false,
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- system_alerts インデックス
+CREATE INDEX IF NOT EXISTS idx_system_alerts_project_id ON system_alerts(project_id);
+CREATE INDEX IF NOT EXISTS idx_system_alerts_type ON system_alerts(alert_type);
+CREATE INDEX IF NOT EXISTS idx_system_alerts_active ON system_alerts(is_active);
+CREATE INDEX IF NOT EXISTS idx_system_alerts_created_at ON system_alerts(created_at DESC);
+
+-- system_alerts updated_at トリガー
+DROP TRIGGER IF EXISTS set_timestamp_system_alerts ON system_alerts;
+CREATE TRIGGER set_timestamp_system_alerts
+BEFORE UPDATE ON system_alerts
+FOR EACH ROW
+EXECUTE FUNCTION update_timestamp();
+
+-- audit_logs テーブルに project_id カラムを追加（マルチテナント対応）
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS project_id INT NOT NULL DEFAULT 1;
+CREATE INDEX IF NOT EXISTS idx_audit_logs_project_id ON audit_logs(project_id);
+
+-- 仮データの挿入
+-- 管理者ユーザー
+INSERT INTO users (id, name, email, password, role) VALUES ('550e8400-e29b-41d4-a716-446655440000', 'Admin User', 'admin@example.com', 'password', 'admin') ON CONFLICT (email) DO NOTHING;
+
+-- サンプルコレクション: users
+INSERT INTO api_collections (user_id, project_id, name, description) VALUES ('550e8400-e29b-41d4-a716-446655440000', 1, 'users', 'ユーザー情報コレクション') ON CONFLICT DO NOTHING;
+
+-- サンプルコレクション: products
+INSERT INTO api_collections (user_id, project_id, name, description) VALUES ('550e8400-e29b-41d4-a716-446655440000', 1, 'products', '商品情報コレクション') ON CONFLICT DO NOTHING;
+
+-- フィールド定義 (usersコレクション)
+INSERT INTO api_fields (collection_id, field_id, view_name, field_type, is_required) VALUES (1, 'name', '名前', 'text', true) ON CONFLICT DO NOTHING;
+INSERT INTO api_fields (collection_id, field_id, view_name, field_type, is_required) VALUES (1, 'email', 'メールアドレス', 'text', true) ON CONFLICT DO NOTHING;
+
+-- フィールド定義 (productsコレクション)
+INSERT INTO api_fields (collection_id, field_id, view_name, field_type, is_required) VALUES (2, 'name', '商品名', 'text', true) ON CONFLICT DO NOTHING;
+INSERT INTO api_fields (collection_id, field_id, view_name, field_type, is_required) VALUES (2, 'price', '価格', 'number', true) ON CONFLICT DO NOTHING;
+
+-- サンプルエントリ (users)
+INSERT INTO entries (project_id, collection_id, data) VALUES (1, 1, '{"name": "山田太郎", "email": "yamada@example.com"}') ON CONFLICT DO NOTHING;
+INSERT INTO entries (project_id, collection_id, data) VALUES (1, 1, '{"name": "鈴木花子", "email": "suzuki@example.com"}') ON CONFLICT DO NOTHING;
+
+-- サンプルエントリ (products)
+INSERT INTO entries (project_id, collection_id, data) VALUES (1, 2, '{"name": "ノートパソコン", "price": 100000}') ON CONFLICT DO NOTHING;
+INSERT INTO entries (project_id, collection_id, data) VALUES (1, 2, '{"name": "スマートフォン", "price": 50000}') ON CONFLICT DO NOTHING;
+
+-- APIキー
+INSERT INTO api_keys (user_id, project_id, name, key, collection_ids) VALUES ('550e8400-e29b-41d4-a716-446655440000', 1, 'Test API Key', 'test-api-key-1234567890abcdef', '{1,2}') ON CONFLICT (key) DO NOTHING;

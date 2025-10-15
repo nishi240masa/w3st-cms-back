@@ -11,6 +11,8 @@ type AuditRepository interface {
 	Create(ctx context.Context, log *models.AuditLog) *errors.DomainError
 	FindByID(ctx context.Context, id string) (*models.AuditLog, *errors.DomainError)
 	FindByUserID(ctx context.Context, userID string) ([]*models.AuditLog, *errors.DomainError)
+	FindByProjectID(ctx context.Context, projectID int) ([]*models.AuditLog, *errors.DomainError)
 	FindByAction(ctx context.Context, action string) ([]*models.AuditLog, *errors.DomainError)
 	FindAll(ctx context.Context, limit int, offset int) ([]*models.AuditLog, *errors.DomainError)
+	FindByProjectIDWithLimit(ctx context.Context, projectID int, limit int, offset int) ([]*models.AuditLog, *errors.DomainError)
 }

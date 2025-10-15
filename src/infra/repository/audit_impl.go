@@ -57,6 +57,24 @@ func (r *AuditRepositoryImpl) FindByAction(ctx context.Context, action string) (
 	return logs, nil
 }
 
+func (r *AuditRepositoryImpl) FindByProjectID(ctx context.Context, projectID int) ([]*models.AuditLog, *myerrors.DomainError) {
+	var logs []*models.AuditLog
+	result := r.db.WithContext(ctx).Where("project_id = ?", projectID).Find(&logs)
+	if result.Error != nil {
+		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error)
+	}
+	return logs, nil
+}
+
+func (r *AuditRepositoryImpl) FindByProjectIDWithLimit(ctx context.Context, projectID int, limit int, offset int) ([]*models.AuditLog, *myerrors.DomainError) {
+	var logs []*models.AuditLog
+	result := r.db.WithContext(ctx).Where("project_id = ?", projectID).Limit(limit).Offset(offset).Find(&logs)
+	if result.Error != nil {
+		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error)
+	}
+	return logs, nil
+}
+
 func (r *AuditRepositoryImpl) FindAll(ctx context.Context, limit int, offset int) ([]*models.AuditLog, *myerrors.DomainError) {
 	var logs []*models.AuditLog
 	result := r.db.WithContext(ctx).Limit(limit).Offset(offset).Find(&logs)

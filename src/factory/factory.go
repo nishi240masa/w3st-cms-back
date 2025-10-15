@@ -21,6 +21,10 @@ type Factory interface {
 	InitFieldController() *controllers.FieldController
 	InitMediaController() *controllers.MediaController
 	InitAuditController() *controllers.AuditController
+	InitSystemAlertController() *controllers.SystemAlertController
+	InitSystemAlertUsecase() usecase.SystemAlertUsecase
+	InitProjectUsecase() usecase.ProjectUsecase
+	InitProjectController() *controllers.ProjectController
 	InitPermissionController() *controllers.PermissionController
 	InitVersionController() *controllers.VersionController
 }
@@ -112,6 +116,28 @@ func (f factory) InitAuditController() *controllers.AuditController {
 	auditUsecase := usecase.NewAuditUsecase(auditRepo)
 
 	return controllers.NewAuditController(auditUsecase)
+}
+
+func (f factory) InitSystemAlertController() *controllers.SystemAlertController {
+	systemAlertRepo := infrastructure.NewSystemAlertRepository(f.DB)
+	systemAlertUsecase := usecase.NewSystemAlertUsecase(systemAlertRepo)
+
+	return controllers.NewSystemAlertController(systemAlertUsecase)
+}
+
+func (f factory) InitSystemAlertUsecase() usecase.SystemAlertUsecase {
+	systemAlertRepo := infrastructure.NewSystemAlertRepository(f.DB)
+	return usecase.NewSystemAlertUsecase(systemAlertRepo)
+}
+
+func (f factory) InitProjectUsecase() usecase.ProjectUsecase {
+	projectRepo := infrastructure.NewProjectRepository(f.DB)
+	return usecase.NewProjectUsecase(projectRepo)
+}
+
+func (f factory) InitProjectController() *controllers.ProjectController {
+	projectUsecase := f.InitProjectUsecase()
+	return controllers.NewProjectController(projectUsecase)
 }
 
 func (f factory) InitPermissionController() *controllers.PermissionController {

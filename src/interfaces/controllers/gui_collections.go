@@ -200,6 +200,35 @@ func (c *GUICollectionsController) DeleteField(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Field deleted successfully"})
 }
 
+// GetFields - GUI用：フィールド一覧取得
+func (c *GUICollectionsController) GetFields(ctx *gin.Context) {
+	collectionId := ctx.Param("collectionId")
+
+	// int型に変換
+	collectionIdInt, err := strconv.Atoi(collectionId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Collection ID"})
+		return
+	}
+
+	// プロジェクトIDを取得
+	projectID := ctx.GetInt("projectID")
+
+	// フィールド一覧を取得
+	fields, err := c.fieldUsecase.GetByCollectionId(collectionIdInt, projectID)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, fields)
+}
+
 // GetCollections - GUI用：コレクション一覧取得
 func (c *GUICollectionsController) GetCollections(ctx *gin.Context) {
 	// プロジェクトIDを取得

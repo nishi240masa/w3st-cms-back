@@ -38,8 +38,16 @@ func (c *AuditController) LogAction(ctx *gin.Context) {
 		return
 	}
 
+	// プロジェクトIDを取得（APIキー認証の場合はコンテキストから、GUIの場合はデフォルト）
+	projectID := 1 // デフォルト
+	if pID, exists := ctx.Get("projectID"); exists {
+		if pid, ok := pID.(int); ok {
+			projectID = pid
+		}
+	}
+
 	// アクションログ
-	err := c.auditUsecase.LogAction(ctx.Request.Context(), userUUID, input.Action, input.Resource, input.Details)
+	err := c.auditUsecase.LogActionWithProject(ctx.Request.Context(), userUUID, projectID, input.Action, input.Resource, input.Details)
 	if err != nil {
 		var domainErr *myerrors.DomainError
 		if errors.As(err, &domainErr) {
@@ -116,6 +124,55 @@ func (c *AuditController) GetLogsByAction(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, responses)
 }
 
+func (c *AuditController) GetLogsByProject(ctx *gin.Context) {
+	projectIDStr := ctx.Param("projectId")
+	projectID, err := strconv.Atoi(projectIDStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project ID"})
+		return
+	}
+
+	// クエリパラメータからlimitとoffsetを取得、デフォルト値設定
+	limitStr := ctx.DefaultQuery("limit", "50")
+	offsetStr := ctx.DefaultQuery("offset", "0")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 {
+		limit = 50
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		offset = 0
+	}
+
+	// プロジェクトのログ取得
+	logs, err := c.auditUsecase.GetLogsByProjectWithLimit(ctx.Request.Context(), projectID, limit, offset)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	// レスポンス
+	responses := make([]dto.AuditLogResponse, 0, len(logs))
+	for _, log := range logs {
+		responses = append(responses, dto.AuditLogResponse{
+			ID:        log.ID.String(),
+			UserID:    log.UserID.String(),
+			Action:    log.Action,
+			Resource:  log.Resource,
+			Details:   log.Details,
+			CreatedAt: log.CreatedAt.String(),
+		})
+	}
+	ctx.JSON(http.StatusOK, responses)
+}
+
 func (c *AuditController) GetAllLogs(ctx *gin.Context) {
 	// クエリパラメータからlimitとoffsetを取得、デフォルト値設定
 	limitStr := ctx.DefaultQuery("limit", "50")
@@ -131,7 +188,7 @@ func (c *AuditController) GetAllLogs(ctx *gin.Context) {
 		offset = 0
 	}
 
-	// 全ログ取得
+	// 全ログ取得（管理者権限が必要）
 	logs, err := c.auditUsecase.GetAllLogs(ctx.Request.Context(), limit, offset)
 	if err != nil {
 		var domainErr *myerrors.DomainError

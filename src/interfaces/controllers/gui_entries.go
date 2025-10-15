@@ -102,3 +102,68 @@ func (c *GUIEntriesController) CreateEntry(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Entry created successfully"})
 }
+
+func (c *GUIEntriesController) UpdateEntry(ctx *gin.Context) {
+	// entryIdを取得
+	entryId := ctx.Param("entryId")
+
+	// int型に変換
+	entryIdInt, err := strconv.Atoi(entryId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Entry ID"})
+		return
+	}
+
+	// プロジェクトIDを取得
+	projectID := ctx.GetInt("projectID")
+
+	// リクエストのバインド
+	var input dto.UpdateEntry
+	if err := ctx.ShouldBindJSON(&input); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// entryを更新
+	err = c.entriesUsecase.UpdateEntry(entryIdInt, input.Data, projectID)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Entry updated successfully"})
+}
+
+func (c *GUIEntriesController) DeleteEntry(ctx *gin.Context) {
+	// entryIdを取得
+	entryId := ctx.Param("entryId")
+
+	// int型に変換
+	entryIdInt, err := strconv.Atoi(entryId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Entry ID"})
+		return
+	}
+
+	// プロジェクトIDを取得
+	projectID := ctx.GetInt("projectID")
+
+	// entryを削除
+	err = c.entriesUsecase.DeleteEntry(entryIdInt, projectID)
+	if err != nil {
+		var domainErr *myerrors.DomainError
+		if errors.As(err, &domainErr) {
+			ErrorHandler(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Entry deleted successfully"})
+}

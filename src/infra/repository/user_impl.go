@@ -50,6 +50,43 @@ func (r *UserRepositoryImpl) FindByEmail(ctx context.Context, email string) (*mo
 	return &user, nil
 }
 
+// GetAllUsers
+func (r *UserRepositoryImpl) GetAllUsers(ctx context.Context) ([]models.Users, *myerrors.DomainError) {
+	var users []models.Users
+	result := r.db.WithContext(ctx).Find(&users)
+
+	if result.Error != nil {
+		return nil, myerrors.NewDomainError(myerrors.QueryError, result.Error)
+	}
+
+	return users, nil
+}
+
+// DeleteUser
+func (r *UserRepositoryImpl) DeleteUser(ctx context.Context, userID string) *myerrors.DomainError {
+	result := r.db.WithContext(ctx).Where("id = ?", userID).Delete(&models.Users{})
+
+	if result.Error != nil {
+		return myerrors.NewDomainError(myerrors.QueryError, result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return myerrors.NewDomainErrorWithMessage(myerrors.QueryDataNotFoundError, "ユーザーが見つかりません")
+	}
+
+	return nil
+}
+
+// Update
+func (r *UserRepositoryImpl) Update(ctx context.Context, user *models.Users) *myerrors.DomainError {
+	result := r.db.WithContext(ctx).Save(user)
+
+	if result.Error != nil {
+		return myerrors.NewDomainError(myerrors.QueryError, result.Error)
+	}
+	return nil
+}
+
 // FindByID
 func (r *UserRepositoryImpl) FindByID(ctx context.Context, userID string) (*models.Users, *myerrors.DomainError) {
 	var user models.Users
